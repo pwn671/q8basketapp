@@ -1,0 +1,223 @@
+.pageWrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #fff;
+    min-height: 100vh;
+}
+
+.pageInner {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #fff;
+    box-sizing: border-box;
+
+    /* adjust these to match desired size of the two bars */
+    --payment-height: 74px;
+    /* bottom bar height */
+    --location-height: 72px;
+    /* address bar height (overlaps payment bar) */
+}
+
+/* section (title + card) */
+.section {
+    margin-bottom: 14px;
+}
+
+/* the small section title shown above the rounded card */
+.sectionTitle {
+    /* margin: 6px 6px; */
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 8px 0px 2px 0px;
+}
+
+/* card containing rows */
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+    margin: 12px;
+}
+
+
+
+/* text labels (title + optional subtitle) */
+.labels {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #111;
+    line-height: 1;
+    margin: 18px 0 6px 0;
+
+}
+
+.subtitle {
+    font-size: 0.82rem;
+    color: #777;
+    font-weight: 600;
+}
+
+
+
+.btn{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 5px;
+    gap: 15px;
+}
+/* ADD badge (small pill with red text and border) */
+.addBtn {
+    border: 1px solid #d32f2f;
+    color: #d32f2f;
+    background: #fff;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+
+
+
+
+
+
+.inputLine {
+    width: 100%;
+    padding: 1px 4px;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    outline: none;
+    font-size: 1rem;
+    background: transparent;
+    transition: border-color 0.2s ease;
+    margin: 0px;
+    margin-bottom: 12px;
+}
+
+.inputLine:focus {
+    border-bottom: 2px solid #d32f2f;
+    /* Blue line on focus */
+}
+
+.paymentBar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: calc(100% - 28px);
+    max-width: 420px;
+    height: var(--payment-height);
+    background: #fff;
+    border-radius: 14px 14px 8px 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+    z-index: 120;
+    box-sizing: border-box;
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 4px;
+}
+.title{
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #111;
+    margin: 2px ;
+}
+.weight {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.save {
+    font-size: 0.8rem;
+    color: #d32f2f;
+    cursor: pointer;
+}
+
+.payLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.payLabel {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.payMethod {
+    font-weight: 900;
+    font-size: 1rem;
+    color: #111;
+}
+
+.placeBtn {
+    border: none;
+    background: linear-gradient(90deg, #ff2b4a, #c10f28);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    gap: 10px;
+}
+
+.totalText {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+    font-weight: 500;
+    gap: 4px;
+}
+
+.placeText {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* safe-area spacer */
+.pageInner::after {
+    content: "";
+    display: block;
+    height: env(safe-area-inset-bottom, 0px);
+}
+
+/* small helpers */
+button {
+    -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,197 @@
+.pageWrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #fff;
+    min-height: 100vh;
+}
+
+.pageInner {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #fff;
+    box-sizing: border-box;
+
+    /* adjust these to match desired size of the two bars */
+    --payment-height: 74px;
+    /* bottom bar height */
+    --location-height: 72px;
+    /* address bar height (overlaps payment bar) */
+}
+
+/* section (title + card) */
+.section {
+    margin-bottom: 14px;
+}
+
+/* the small section title shown above the rounded card */
+.sectionTitle {
+    margin: 6px 6px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+}
+
+/* card containing rows */
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+}
+
+/* each row is a button to be keyboard-accessible */
+.item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease, transform 0.08s ease;
+}
+
+/* hover / focus affordance */
+.item:hover,
+.item:focus {
+    background: rgba(0, 0, 0, 0.02);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+/* selected state */
+.itemSelected {
+    background: rgba(211, 47, 47, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(211, 47, 47, 0.08);
+}
+
+/* left area: icon + labels */
+.left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* rounded light icon box */
+.iconBox {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #f6f6f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+}
+
+/* icon image inside */
+.iconImg {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
+}
+
+/* text labels (title + optional subtitle) */
+.labels {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #111;
+    line-height: 1;
+}
+
+.subtitle {
+    font-size: 0.82rem;
+    color: #777;
+    font-weight: 600;
+}
+
+/* right area: add button / chevron / check */
+.right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 48px;
+    justify-content: flex-end;
+}
+
+/* ADD badge (small pill with red text and border) */
+.addBtn {
+    border: 1px solid #d32f2f;
+    color: #d32f2f;
+    background: #fff;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* small chevron (bigger and light) */
+.chev {
+    font-size: 1.35rem;
+    color: #999;
+    line-height: 0;
+}
+
+/* selected check circle */
+.check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #d32f2f;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.couponIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+    /* Responsive tweaks */
+    @media (max-width: 420px) {
+        .wrapper {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .iconBox {
+            width: 40px;
+            height: 40px;
+        }
+
+        .label {
+            font-size: 0.95rem;
+        }
+
+        .addBtn {
+            padding: 6px 8px;
+            font-size: 0.85rem;
+        }
+    }

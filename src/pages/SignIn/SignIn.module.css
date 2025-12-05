@@ -1,0 +1,226 @@
+/* SignIn Page Specific Styles */
+
+/* Subheading text */
+.subheading {
+  color: #3a3a3acc;
+  font-weight: 400;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  user-select: text;
+}
+
+.googleButtonWrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  pointer-events: auto;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.googleButtonWrapper > * {
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+}
+
+/* Form labels */
+label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: #333;
+  user-select: text;
+}
+
+/* Input wrapper */
+.inputWrapper {
+  position: relative;
+  margin-bottom: 1px;
+}
+
+/* Input field */
+.inputField {
+  width: 100%;
+  font-size: 1rem;
+  padding: 12px 44px 12px 48px;
+  border-radius: 20px;
+  border: 1px solid #e3e6ea;
+  outline-offset: 3px;
+  outline-color: transparent;
+  font-family: inherit;
+  user-select: text;
+  transition: border-color 0.3s ease;
+}
+
+.inputField::placeholder {
+  font-style: italic;
+  color: #bbb;
+  user-select: none;
+}
+
+.inputField:focus {
+  border-color: #d32f2f;
+  outline-color: #d32f2f44;
+}
+
+/* Email and password icons */
+.inputIcon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: #a1a1a1;
+  pointer-events: none;
+  user-select: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* Password toggle icon */
+.togglePassword {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #777;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px;
+  line-height: 0;
+  transition: color 0.3s ease;
+}
+
+.eyeIcon {
+  width: 16px;
+  height: 16px;
+  user-select: none;
+}
+
+/* Remember me and forgot password area */
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  color: #444;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+/* Forget password as link style button */
+.forgetBtn {
+  background: none;
+  border: none;
+  color: black;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+/* Sign In button */
+.signInButton {
+  width: 100%;
+  padding: 15px 0;
+  border-radius: 22px;
+  border: none;
+  background: linear-gradient(90deg, #d32f2f, #a21429);
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 22px;
+  transition: background 0.25s ease;
+}
+
+/* Social Sign In buttons */
+.socialButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #f0f0f0;
+  color: #444;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 12px;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.socialButton:hover,
+.socialButton:focus {
+  border-color: #d32f2f;
+  color: #d32f2f;
+  outline: none;
+}
+
+.socialIcon {
+  height: 18px;
+  width: 18px;
+  margin-right: 10px;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Sign up bottom text */
+.signUpText {
+  font-size: 0.95rem;
+  text-align: center;
+  user-select: text;
+}
+
+.signUpText button {
+  border: none;
+  background: none;
+  font-weight: 700;
+  color: #d32f2f;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: inherit;
+  user-select: none;
+}
+
+.signUpText button:hover,
+.signUpText button:focus {
+  color: #a21429;
+  outline: none;
+  text-decoration: none;
+}
+
+.signUpText button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  text-decoration: none;
+}

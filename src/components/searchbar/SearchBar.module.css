@@ -1,0 +1,41 @@
+.searchBarWrapper {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  font-size: 1rem;
+  padding: 12px 40px 12px 44px;
+  border-radius: 14px;
+  border: none;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.micBtn {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.micIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}

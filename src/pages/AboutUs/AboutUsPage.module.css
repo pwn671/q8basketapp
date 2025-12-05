@@ -1,0 +1,99 @@
+.pageWrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #fff;
+    min-height: 100vh;
+    padding-top: env(safe-area-inset-top);
+    box-sizing: border-box;
+  }
+  
+  .pageInner {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    box-sizing: border-box;
+  }
+  
+  /* Scrollable main area under the header */
+  .contentArea {
+    flex: 1;
+    background: #f7f7f7;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Section (accordion) wrapper */
+  .sectionWrapper {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Header styling */
+  .sectionHeader {
+    padding: 14px 16px;
+    background-color: #fafafa;
+    transition: background 0.2s ease;
+  }
+  
+  .sectionHeader:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .expandedHeader {
+    font-weight: 600;
+    font-size: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .collapsedHeader {
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+  
+  /* Expanded section takes space */
+  .expanded {
+    flex-grow: 1;
+  }
+  
+  /* Collapsed: only header visible */
+  .collapsed {
+    height: auto;
+  }
+  
+  /* Scrollable content inside expanded section */
+  .sectionContent {
+    padding: 14px 16px;
+    overflow-y: auto;
+    max-height: 60vh;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Text styling */
+  .aboutText {
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  
+  /* Safe area padding for bottom nav overlap */
+  @media (max-width: 420px) {
+    .contentArea {
+      padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    }
+  }
+  

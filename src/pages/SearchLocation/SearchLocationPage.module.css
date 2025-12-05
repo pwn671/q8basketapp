@@ -1,0 +1,150 @@
+/* container + sizing */
+.pageWrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background: #fff;
+    min-height: 100vh;
+}
+
+.pageInner {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #fff;
+    box-sizing: border-box;
+
+    /* adjust these to match desired size of the two bars */
+    --payment-height: 74px;
+    /* bottom bar height */
+    --location-height: 72px;
+    /* address bar height (overlaps payment bar) */
+}
+
+
+
+/* Bottom sheet */
+.bottomSheet {
+    position: relative;
+    width: 100%;
+    max-height: 100%;
+    background: #fff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+    overflow-y: scroll;
+    /* or auto if needed */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+
+}
+.bottomSheet::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0%);
+    }
+}
+
+
+
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* List */
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* spacing between img, text, and checkbox */
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.list li img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.list li span {
+    flex: 1;
+    /* take remaining space */
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 700;
+}
+
+
+
+.addressItem {
+    display: flex;
+    gap: 12px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    align-items: center;
+    margin-top: 20px;
+}
+
+.addressInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 6px;
+    cursor: pointer;
+}
+
+
+
+.addressMeta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.addressTitle {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 5px 0;
+}
+
+.addressIcon {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    vertical-align: middle;
+    object-fit: contain;
+}

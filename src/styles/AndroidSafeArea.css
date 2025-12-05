@@ -1,0 +1,48 @@
+/* Additional CSS for Android app safe area handling */
+/* This will be injected into the app for better Android compatibility */
+
+/* Force the bottom navigation to be above system UI */
+.bottomNav {
+  /* Override any conflicting styles */
+  position: fixed !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+  
+  /* Use a more aggressive approach for Android */
+  transform: translateX(-50%) translateY(0) !important;
+  
+  /* Ensure it's always visible above system UI */
+  background: #fff !important;
+  border-top: 1px solid #eee !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Add extra padding to body for Android apps */
+body {
+  /* Use JavaScript-detected values if available */
+  padding-bottom: var(--dynamic-navbar-height, 0px) !important;
+  padding-top: var(--dynamic-statusbar-height, 0px) !important;
+  
+  /* Fallback for browsers that don't support CSS variables */
+  padding-bottom: env(safe-area-inset-bottom) !important;
+  padding-top: env(safe-area-inset-top) !important;
+}
+
+/* Ensure app container accounts for navigation */
+.appContainer {
+  /* Use JavaScript-detected values if available */
+  padding-bottom: calc(72px + var(--dynamic-navbar-height, env(safe-area-inset-bottom))) !important;
+}
+
+/* Product page specific adjustments */
+.products {
+  /* Use JavaScript-detected values if available */
+  padding-bottom: calc(12px + var(--dynamic-navbar-height, env(safe-area-inset-bottom)) + 72px) !important;
+}
+
+/* Media query adjustments for mobile */
+@media (max-width: 480px) {
+  .products {
+    padding-bottom: calc(8px + var(--dynamic-navbar-height, env(safe-area-inset-bottom)) + 72px) !important;
+  }
+}

@@ -1,0 +1,172 @@
+/* Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 2000;            /* Higher than navbar (1000) */
+}
+
+/* Bottom sheet */
+.bottomSheet {
+    position: relative;
+    width: 100%;
+    max-height: 60%;
+    background: #fff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+    margin-bottom: calc(56px + env(safe-area-inset-bottom)); /* Push up above navbar */
+    box-sizing: border-box;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0%);
+    }
+}
+
+/* Close button (moved inside header for visibility) */
+/* Floating close button */
+.closeBtn {
+    position: absolute;
+    top: auto;
+    bottom: calc(45% + 8px);
+    /* just above the bottomSheet */
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1101;
+    /* above sheet */
+}
+
+
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* List */
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* spacing between img, text, and checkbox */
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.list li img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.list li span {
+    flex: 1;
+    /* take remaining space */
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 700;
+}
+
+.activeItem {
+    background: #f9f9f9;
+}
+
+/* Footer */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.clearBtn,
+.applyBtn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+}
+
+.clearBtn {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.applyBtn {
+    background: #d32f2f;
+    color: #fff;
+}
+
+.clearBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Checkbox styling */
+.checkBox {
+
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: #d32f2f;
+    border-radius: 50%;
+    border: 2px solid #d32f2f;
+}
+
+.checkBox:checked {
+    background-color: #d32f2f;
+    border-color: #d32f2f;
+}
+
+.checkBox:checked::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    /* inner dot */
+    border-radius: 50%;
+}

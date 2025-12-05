@@ -1,0 +1,39 @@
+/* Category Cards */
+.categoryCard {
+  flex: 0 0 23%;
+  height: 70px;
+  background: #f0f0f0;
+  border-radius: 18px;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* box-shadow: 0 6px 12px rgba(102, 102, 102, 0.12); */
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.categoryCard:hover {
+  box-shadow: 0 6px 18px rgba(211, 47, 47, 0.3);
+}
+
+.categoryCard img {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.categoryCard span {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+/* Scrollbar styles for Firefox */
+.categoriesList {
+  scrollbar-width: none;
+}

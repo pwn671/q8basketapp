@@ -1,0 +1,202 @@
+/* OTP Popup Styles */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.popup {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.header {
+  background: linear-gradient(135deg, #d32f2f, #f44336);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.content {
+  padding: 24px;
+}
+
+.info {
+  margin-bottom: 20px;
+}
+
+.info p {
+  margin: 8px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.otpDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border: 2px dashed #d32f2f;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.otpCode {
+  font-size: 32px;
+  font-weight: bold;
+  color: #d32f2f;
+  letter-spacing: 4px;
+  font-family: 'Courier New', monospace;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #d32f2f;
+  min-width: 120px;
+  text-align: center;
+}
+
+.copyButton {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copyButton:hover {
+  background: #b71c1c;
+}
+
+.note {
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.note p {
+  margin: 4px 0;
+  color: #1565c0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.footer {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: center;
+}
+
+.okButton {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  min-width: 120px;
+}
+
+.okButton:hover {
+  background: #45a049;
+}
+
+.okButton:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .popup {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .content {
+    padding: 20px;
+  }
+  
+  .otpCode {
+    font-size: 28px;
+    letter-spacing: 3px;
+    padding: 10px 12px;
+  }
+  
+  .otpDisplay {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .copyButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

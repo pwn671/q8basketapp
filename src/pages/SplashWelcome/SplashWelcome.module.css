@@ -1,0 +1,226 @@
+/* Root container for splash screen */
+.root {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for better mobile support */
+  width: 100vw;
+  position: fixed; /* Fixed positioning to prevent scrolling */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Push content to bottom */
+  align-items: center;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-color: #fff; /* fallback */
+  user-select: none;
+  padding: 20px; /* Add padding to prevent overflow */
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent scrolling */
+  overscroll-behavior: none; /* Prevent overscroll bounce */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Mobile app specific styles */
+.root.mobileApp {
+  position: fixed;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none; /* Prevent touch gestures that cause scrolling */
+  -webkit-overflow-scrolling: none;
+  /* Prevent any movement/bounce */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: auto;
+}
+
+/* Bottom card */
+.card {
+  width: 100%;
+  max-width: 350px;  /* Fixed width of the card */
+  background: #fff;
+  border-radius: 28px 28px 28px 28px; /* only top corners rounded */
+  box-shadow: 0 -10px 36px rgba(0,0,0,0.25);
+  padding: 20px 30px 15px;
+  box-sizing: border-box;
+  user-select: text;
+  text-align: center;
+  align-self: center; /* center horizontally */
+  flex-shrink: 0; /* Prevent card from shrinking */
+}
+
+/* Welcome text above the logo */
+.welcomeText {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #333;
+  user-select: text;
+}
+
+/* Logo image */
+/* Logo image */
+.logoInline {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  margin-bottom: 15px; /* gap between logo and text */
+}
+
+.logoInline img {
+  width: 200px; /* Reduced logo size for better fit */
+  max-width: 100%;
+  height: auto;
+  filter: none; /* Removed red drop shadow */
+  user-select: none;
+  pointer-events: none;
+}
+
+
+/* Subtitle below the logo */
+.subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 20px;
+  user-select: text;
+}
+
+/* Button styling outside card */
+.buttonContainer {
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  justify-content: center;
+  padding: 15px 0 10px; /* Adjusted padding */
+  flex-shrink: 0; /* Prevent button container from shrinking */
+  order: 2; /* Default order - after card */
+}
+
+.root.mobileApp .buttonContainer {
+  order: 2; /* Button first on mobile */
+  margin-bottom: 20px;
+}
+
+.root.mobileApp .card {
+  order: 1; /* Card second on mobile */
+}
+
+
+.button {
+  width: 100%;
+  background: linear-gradient(90deg, #d32f2f, #a21429);
+  color: white;
+  border: none;
+  border-radius: 22px;
+  padding: 15px 0;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.25s ease;
+}
+
+.button:hover,
+.button:focus {
+  background: linear-gradient(90deg, #a21429, #d32f2f);
+  outline: none;
+}
+
+.button:active {
+  background: linear-gradient(90deg, #7a101f, #a21429);
+}
+
+.button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive adjustments for smaller screens */
+@media (max-height: 700px) {
+  .card {
+    padding: 15px 30px 10px;
+  }
+
+  .welcomeText {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+
+  .logoInline {
+    margin-bottom: 10px;
+  }
+
+  .logoInline img {
+    width: 180px;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+  }
+
+  .buttonContainer {
+    padding: 10px 0 5px;
+  }
+
+  .button {
+    padding: 12px 0;
+    font-size: 1.1rem;
+  }
+}
+
+/* Extra small screens */
+@media (max-height: 600px) {
+  .root {
+    padding: 15px;
+  }
+
+  .card {
+    padding: 12px 25px 8px;
+  }
+
+  .welcomeText {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+  }
+
+  .logoInline {
+    margin-bottom: 8px;
+  }
+
+  .logoInline img {
+    width: 150px;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+
+  .buttonContainer {
+    padding: 8px 0 5px;
+  }
+
+  .button {
+    padding: 10px 0;
+    font-size: 1rem;
+  }
+}
+
+/* Add safe area support for mobile devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .root.mobileApp {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* add extra space for nav bar */
+  }
+
+  .root.mobileApp .buttonContainer {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}

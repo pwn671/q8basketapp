@@ -1,0 +1,61 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 10px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  /* Ensure header respects safe area insets */
+  padding-top: max(10px, env(safe-area-inset-top));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px; /* space between back button and title/search */
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backBtn img {
+  width: 24px;
+  height: 24px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.searchBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.searchIcons {
+  width: 24px;
+  height: 24px;
+}
+.searchIcons img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Fallback for older browsers */
+@supports not (padding: env(safe-area-inset-top)) {
+  .header {
+    padding-top: 20px;
+  }
+}

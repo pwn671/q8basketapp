@@ -1,0 +1,415 @@
+/* Container wraps everything and centers like your other pages */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 420px;
+  margin: 0 auto;
+  background: transparent;
+  /* was #fff */
+  overflow: hidden;
+  /* Add safe area support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+
+/* Top Image Section */
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background: transparent;
+  /* was #f9f9f9 */
+}
+
+.slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 280px;
+}
+
+.embla {
+  overflow: hidden;
+  width: 100%;
+  height: 280px;
+}
+
+.embla__container {
+  display: flex;
+  height: 100%;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.productImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+.backBtn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.headerIcons {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.headerIcons button {
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.infoContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 440px;
+  margin: 0 auto;
+  position: relative;
+  flex: 1;
+  z-index: 10;
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  background: transparent !important;
+  /* force transparent */
+}
+
+.infoContainer::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Product Info Card */
+.details {
+  background: rgb(248, 249, 250);
+  /* semi-transparent */
+  padding: 16px;
+  border-radius: 30px;
+  margin: 0px 25px;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Long Description & Policy */
+.longDesc,
+.policy {
+  padding: 16px;
+  background: transparent;
+  /* was #fff */
+}
+
+
+.title {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.offer {
+  font-size: 0.85rem;
+  color: #444;
+  margin: 4px 0;
+}
+
+.stock {
+  font-size: 0.85rem;
+  color: green;
+  margin: 6px 0;
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.mrp {
+  text-decoration: line-through;
+  color: #888;
+  margin-left: 6px;
+}
+
+.viewDetails {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: #d32f2f;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detailsToggle {
+  display: inline-flex;
+  align-items: center;
+}
+
+.arrow {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+
+/* Long Description & Policy */
+.longDesc,
+.policy {
+  padding: 16px;
+  background: #fff;
+}
+
+.longDesc h3,
+.policy h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.longDesc p,
+.policy p {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #444;
+}
+
+/* Related Section */
+.related {
+  padding: 16px;
+  background: transparent;
+  /* was #fff */
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.card {
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Back Button (left corner) */
+.backBtn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.backBtn img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Header Icons (right corner) */
+.headerIcons {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.headerIcons button {
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.headerIcons img {
+  width: 20px;
+  height: 20px;
+}
+
+
+.related h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+
+
+.cardImg {
+  position: relative;
+  width: 100%;
+  height: 100px;
+}
+
+.cardImg img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.addBtn {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  background: #fff;
+  border: 1px solid #d32f2f;
+  color: #d32f2f;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cardTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+.price {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.mrp {
+  text-decoration: line-through;
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: 4px;
+}
+
+
+/* Bottom Sticky Bar */
+.bottomBar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-top: auto;
+}
+
+.bottomPrice p {
+  font-weight: bold;
+  gap: 1px;
+}
+
+.bottomPrice small {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.addToCart {
+  background: linear-gradient(90deg, #d32f2f, #a21429);
+  color: #fff;
+  border: none;
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qtyControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background:linear-gradient(90deg, #d32f2f, #a21429);
+  color: white;
+  border-radius: 6px;
+  padding: 15px 20px;
+font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.qtyControls button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.qtyControlsCard {
+position: absolute;
+  bottom: -12px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #d32f2f;
+  color: white;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+.qtyControlsCard button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}

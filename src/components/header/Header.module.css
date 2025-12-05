@@ -1,0 +1,97 @@
+.homeHeader {
+  padding: 10px 20px 15px 20px;
+  background: linear-gradient(180deg,
+      rgb(255, 171, 165) 1%,
+      rgb(255, 201, 197) 20%,
+      #ffffff 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Ensure header respects safe area insets */
+  padding-top: max(10px, env(safe-area-inset-top));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.homeHeader h1 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #1a1a1a;
+  padding: 0px 10px 0px 10px;
+}
+
+.locationWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  background: transparent;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.locationIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.locationIcon img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  color: black;
+}
+.arrowIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.arrowIcon img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  color: black;
+}
+
+.locationInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.locationLabel {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.locationText {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #000;
+  max-width: 240px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Fallback for older browsers */
+@supports not (padding: env(safe-area-inset-top)) {
+  .homeHeader {
+    padding-top: 20px;
+  }
+}

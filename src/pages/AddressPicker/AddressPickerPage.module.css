@@ -1,0 +1,251 @@
+.fullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: rgba(0,0,0,0.35);
+  z-index: 2000;
+}
+
+/* center container to app width (420px) */
+.container {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* top search row overlayed on map */
+.searchRow {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  align-items: center;
+  z-index: 3;
+  background: transparent;
+}
+.searchInput {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e6e6e6;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+.closeTop {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* Map area fills most of the screen */
+.mapArea {
+  flex: 1;
+  background: #eee;
+  position: relative;
+  min-height: 320px;
+}
+
+/* small search results popup inside container */
+.searchResults {
+  position: absolute;
+  top: 64px;
+  left: 12px;
+  right: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.09);
+  z-index: 6;
+}
+.searchResultItem {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+.searchResultItem:hover { background: #fafafa; }
+.resultTitle { font-size: 0.9rem; font-weight: 600; color: #222; }
+.resultMeta { font-size: 0.78rem; color: #666; margin-top: 4px; }
+
+/* bottom card anchored to bottom of container (like screenshot) */
+.bottomCard {
+  padding: 14px;
+  background: #fff;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.06);
+}
+.cardContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cardTitle { font-size: 0.95rem; font-weight: 800; margin-bottom: 6px; }
+.cardAddress { font-size: 0.9rem; color: #444; max-width: 250px; line-height: 1.2; }
+.cardActions { display:flex; align-items:center; gap:8px; }
+.changeBtn {
+  background: transparent;
+  border: 1px solid #f2a8a8;
+  color: #d32f2f;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* small pin info */
+.pinInfo { font-size:0.8rem; color:#b33; margin-top:8px; }
+
+/* big button */
+.addDetailsBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  background: linear-gradient(90deg,#ff3b4a,#b3142d);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* ----- ADDRESS DETAILS SHEET ----- */
+.detailsOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 4000;
+  background: rgba(0,0,0,0.3);
+}
+.detailsSheet {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+  max-height: 80%;
+  overflow-y: auto;
+}
+.detailsHeader {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: 6px;
+  position: relative;
+}
+.detailsHeader h4 { 
+  margin:0; 
+  font-size:1.05rem; 
+  flex: 1;
+  text-align: center;
+}
+.detailsBack {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.detailsBack img {
+  width: 20px;
+  height: 20px;
+}
+.detailsClose {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* sections */
+.section { margin-top: 12px; }
+.label { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; }
+.radioRow { display:flex; gap: 18px; }
+.radioItem { display:flex; gap: 8px; align-items: center; font-weight: 600; }
+.saveAsRow { display:flex; gap:8px; justify-content: space-around; }
+.saveAsBtn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background:transparent;
+  border:1px solid #eee;
+  cursor:pointer;
+  font-weight:700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.saveAsActive {
+  background: #fff0f2;
+  border-color:#f2a8a8;
+  color: #d32f2f;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.checkBox {
+
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: #d32f2f;
+    border-radius: 50%;
+    border: 2px solid #d32f2f;
+}
+
+/* input */
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* area row with change button */
+.areaRow { display:flex; gap:8px; align-items:center; }
+.changeLocationBtn {
+  background: transparent;
+  border: none;
+  color: #d32f2f;
+  font-weight: 600;
+  cursor:pointer;
+}
+
+/* footer */
+.detailsFooter { display:flex; gap:10px; margin-top:14px; }
+.cancelBtn {
+  flex:1; padding:10px; border-radius:10px;
+  background:#f0f0f0; border:none; font-weight:700; cursor:pointer;
+}
+.saveBtn {
+  flex:1; padding:15px 10px;  border-radius:10px;
+  background:linear-gradient(90deg,#ff3b4a,#b3142d); color:#fff; border:none; font-weight:800; cursor:pointer;
+}
+
+.icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #f5f5f5;
+    flex-shrink: 0;
+}

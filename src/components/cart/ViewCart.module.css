@@ -1,0 +1,66 @@
+.viewCart {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #d32f2f, #a21429);
+  color: #fff;
+  border-radius: 40px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  min-width: 250px;
+  height: 70px;
+  cursor: pointer;
+  gap: 16px;
+}
+
+/* Image Stack (overlapping product thumbnails) */
+.imageStack {
+  position: relative;
+  display: flex;
+  width: 90px; /* reserve space for up to 3 overlapped images */
+}
+
+.cartImg {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  object-fit: cover;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Cart Info */
+.cartInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+.cartTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.cartCount {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin: 2px 0 0 0;
+}
+
+/* Arrow Icon */
+.arrowIcon {
+  font-size: 1.5rem;
+  margin-left: 10px;
+  flex-shrink: 0; /* don’t let it shrink */
+  display: flex;
+  align-items: center;
+}

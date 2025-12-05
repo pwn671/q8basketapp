@@ -1,0 +1,552 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  width: 100vw;
+  background: #fff;
+  position: absolute;
+  /* Add safe area padding */
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Remove flex-direction: column; */
+}
+
+.productContainer {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  max-height: 100vh;
+  background: #fff;
+  border-radius: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  /* Prevent scroll chaining */
+  overscroll-behavior: contain;
+  /* Prevent the container itself from being scrollable */
+  touch-action: pan-y;
+  /* Optional: add box-shadow for elevation */
+  /* box-shadow: 0 2px 12px rgba(0,0,0,0.06); */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  font-size: 1.1rem;
+}
+.backBtn,
+.searchBtn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.searchBarWrapper {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  font-size: 1rem;
+  padding: 12px 40px 12px 44px; /* left space for icon, right space for mic */
+  border-radius: 14px;
+  border: none;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.micBtn {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.micIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.searchIcons {
+  /* position: absolute; */
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+}
+
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.backBtn {
+  /* position: absolute; */
+  left: 14px;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+}
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* Important for flex children to respect height */
+  align-items: stretch; /* Ensure children stretch to full height */
+  /* Prevent scroll chaining */
+  overscroll-behavior: contain;
+}
+
+.products {
+  flex: 1;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom) + 72px);
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 0; /* Important for flex children to respect height */
+  height: 100%; /* Use 100% of parent container */
+  /* Prevent scroll chaining - stops scroll from propagating to parent */
+  overscroll-behavior-y: contain;
+  /* Prevent momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Add space for the gradient overlay if needed */
+}
+.products::-webkit-scrollbar {
+  display: none;
+}
+
+/* Gradient shade at the top of the product list */
+.products::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 250px; /* adjust height as needed */
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgb(255, 171, 165) 10%,
+    rgb(255, 201, 197) 50%,
+    #ffffff 100%);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filters button {
+  padding: 8px 15px;
+  background: #f8f9fa;
+  border: none;
+  border-radius: 6px;
+  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.card {
+  background: transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  max-width: 180px;
+  min-width: 140px;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.card {
+  overflow: visible; /* <-- this is important */
+  position: relative; /* if needed for layout */
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100px;
+}
+
+
+.productImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  background: #f5f5f5;
+}
+
+
+.addBtn {
+  position: absolute;
+  bottom: -6px;
+  right: -10px; /* Sticks out slightly */
+  z-index: 2;
+  padding: 6px 8px;
+  background: white;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.2);
+  transition: background 0.2s ease;
+  border-radius: 4px;
+}
+
+
+
+
+.addBtn:hover,
+.addBtn:focus {
+  background: #a21429;
+  color: white; 
+}
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1px 8px 2px;  /* Slightly reduce padding overall */
+    background: transparent; /* Make product info section transparent */
+}
+
+
+
+
+.name {
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  /* -webkit-line-clamp: 2;       Max 2 lines */
+  -webkit-box-orient: vertical;
+}
+
+
+.weight {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  /* margin-bottom: 4px; optional spacing from below */
+  margin-top: 12px;
+}
+
+
+
+
+
+.discount {
+  color: #d32f2f;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.price {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.mrp {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+
+
+.bottomNav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid #eee;
+  padding: 8px 0;
+  background: #fff;
+}
+.bottomNav button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+/* Bottom Navigation */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;   /* matches your app container width */
+  height: 56px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around; /* even spacing */
+  align-items: center;
+  z-index: 100;
+}
+
+.navBtn {
+  background: none;
+  border: none;
+  padding: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.navIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.navBtn.active .navIcon {
+  filter: brightness(0) saturate(100%) invert(26%) sepia(92%) saturate(430%) hue-rotate(349deg) brightness(92%) contrast(93%);
+  /* makes active icon look "red" (#d32f2f) */
+}
+
+
+
+/* Quantity Stepper (like your screenshot: red background with + -) */
+.qtyControls {
+  position: absolute;
+  bottom: -12px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #d32f2f;
+  color: white;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.qtyControls button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* Add Button (white with red border) */
+.addBtn {
+  position: absolute;
+  bottom: -12px;
+  /* right: 8px; */
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: white;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(211, 47, 47, 0.2);
+  transition: all 0.2s ease;
+}
+
+.addBtn:hover {
+  background: #d32f2f;
+  color: white;
+}
+
+/* Product Info Section */
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 6px;
+}
+
+.weight {
+  font-size: 0.8rem;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 2px 0;
+  line-height: 1.3;
+}
+
+.discount {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.price {
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin: 2px 0;
+  display: flex;
+    flex-direction: column;
+}
+
+.mrp {
+  text-decoration: line-through;
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 6px;
+}
+
+/* ProductPage.module.css */
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.filterBtn,
+.sortBtn {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filterBtn img,
+.sortBtn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.filterIcon,
+.sortIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Responsive improvements for mobile */
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  
+  .card {
+    min-width: 120px;
+    max-width: 160px;
+  }
+  
+  .products {
+    padding: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom) + 72px);
+  }
+}
+
+@media (max-width: 360px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 6px;
+  }
+  
+  .card {
+    min-width: 100px;
+    max-width: 140px;
+  }
+  
+  .productImg {
+    height: 80px;
+  }
+  
+  .name {
+    font-size: 0.9rem;
+  }
+  
+  .price {
+    font-size: 0.8rem;
+  }
+}
+
+
+.filterBtn:hover,
+.sortBtn:hover {
+  background: #f5f5f5;
+}
+
+/* Prevent appContainer from scrolling on Product page */
+/* This ensures only the products section scrolls, not the entire page */
+.productPageContainer {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}

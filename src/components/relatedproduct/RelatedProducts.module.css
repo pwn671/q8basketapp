@@ -1,0 +1,94 @@
+.related {
+  padding: 16px;
+  background: transparent;
+}
+
+.related h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.card {
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cardImg {
+  position: relative;
+  width: 100%;
+  height: 100px;
+}
+
+.cardImg img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.addBtn {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  background: #fff;
+  border: 1px solid #d32f2f;
+  color: #d32f2f;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cardTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+.price {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.mrp {
+  text-decoration: line-through;
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: 4px;
+}
+
+.qtyControlsCard {
+  position: absolute;
+  bottom: -12px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #d32f2f;
+  color: white;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.qtyControlsCard button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}

@@ -1,0 +1,17 @@
+
+.root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  user-select: none;
+}
+
+.logo {
+  width: 85px;
+  height: 85px;
+  user-select: none;
+  pointer-events: none;
+}

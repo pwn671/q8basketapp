@@ -1,0 +1,126 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Q8 Basket PWA</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="apple-touch-icon" href="icons/apple-icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+  <div id="app">
+    <!-- Screens container -->
+    <div class="screen splash-logo" id="splash-logo">
+      <!-- Splash screen with logo only -->
+      <img src="icons/logo-q8basket.svg" alt="Q8 Basket Logo" class="logo-large" />
+    </div>
+
+    <div class="screen splash-welcome hidden" id="splash-welcome">
+      <!-- Splash screen with food bg and welcome card -->
+      <div class="welcome-bg"></div>
+      <div class="card welcome-card">
+        <h1 class="welcome-title">
+          Welcome to <span class="logo-inline"><img src="icons/logo-q8basket.svg" alt="Q8 Basket Logo" /> Basket</span>
+        </h1>
+        <p class="welcome-subtitle">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+        </p>
+        <button class="btn btn-primary" id="btn-continue">Continue</button>
+      </div>
+    </div>
+
+    <div class="screen sign-in hidden" id="sign-in">
+      <!-- Sign in form -->
+      <div class="welcome-bg"></div>
+      <div class="card sign-in-card">
+        <h1>Hello Again!</h1>
+        <p class="sign-in-subtitle">Welcome Back You’ve Been Missed</p>
+
+        <form id="signInForm">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <input type="email" id="email" name="email" placeholder="johan0135@gmail.com" required />
+            <span class="input-icon" aria-hidden="true">📧</span>
+          </div>
+
+          <label for="password">Password</label>
+          <div class="input-wrapper password-wrapper">
+            <input type="password" id="password" name="password" required minlength="6" />
+            <button type="button" aria-label="Toggle Password Visibility" class="toggle-password" id="togglePassword">👁️</button>
+          </div>
+
+          <div class="form-options">
+            <label><input type="checkbox" id="rememberMe" /> Remember Me</label>
+            <button type="button" id="forgotPasswordBtn" class="link-btn">Forget Password</button>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+
+          <div class="divider">or</div>
+
+          <button type="button" class="btn btn-outline btn-block sign-apple">
+            <img src="icons/apple.svg" alt="Apple Logo" class="icon" /> Sign In With Apple
+          </button>
+          <button type="button" class="btn btn-outline btn-block sign-google">
+            <img src="icons/google.svg" alt="Google Logo" class="icon" /> Sign In With Google
+          </button>
+
+          <p class="signup-text">
+            Don’t have an account?
+            <button type="button" id="signUpBtn" class="link-btn">Sign Up</button>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen forgot-password hidden" id="forgot-password">
+      <!-- Forget password screen -->
+      <div class="forgot-bg"></div>
+      <div class="card forgot-card">
+        <h1>Forget Password</h1>
+        <p>Enter your email or phone number to send otp</p>
+
+        <form id="forgotPasswordForm">
+          <label for="forgotEmail">Email Address</label>
+          <div class="input-wrapper">
+            <input type="email" id="forgotEmail" name="forgotEmail" placeholder="johan0135@gmail.com" required />
+            <span class="input-icon" aria-hidden="true">📧</span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Send Now</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="screen update-password hidden" id="update-password">
+      <!-- Update password screen -->
+      <div class="welcome-bg"></div>
+      <div class="card update-password-card">
+        <h1>Update Password</h1>
+        <p>Enter new password</p>
+
+        <form id="updatePasswordForm">
+          <label for="newPassword">New Password</label>
+          <div class="input-wrapper password-wrapper">
+            <input type="password" id="newPassword" name="newPassword" required minlength="6" />
+            <button type="button" aria-label="Toggle New Password Visibility" class="toggle-password" data-target="newPassword">👁️</button>
+          </div>
+
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrapper password-wrapper">
+            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" />
+            <button type="button" aria-label="Toggle Confirm Password Visibility" class="toggle-password" data-target="confirmPassword">👁️</button>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Update now</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
