@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Q8 Basket - Online Grocery Shopping</title>
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#d32f2f" />
+  <meta name="description" content="Q8 Basket - Your online grocery shopping companion. Fresh produce, groceries, and more delivered to your doorstep." />
+  
+  <!-- Apple PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Q8 Basket" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-144.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.svg" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192.svg" />
+  
+  <!-- Microsoft PWA Meta Tags -->
+  <meta name="msapplication-TileColor" content="#d32f2f" />
+  <meta name="msapplication-TileImage" content="/icons/icon-144.svg" />
+  <meta name="msapplication-config" content="/browserconfig.xml" />
+  
+  <!-- Additional PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Q8 Basket" />
+  <meta name="format-detection" content="telephone=no" />
+  
+  <!-- Preconnect to external domains for better performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/icons/Logo.svg" />
+  <link rel="shortcut icon" href="/icons/Logo.svg" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  
+  <style>
+    /* Safe area support for mobile devices */
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    #root {
+      min-height: 100vh;
+      min-height: calc(100vh - env(safe-area-inset-bottom));
+    }
+    
+    /* Ensure content doesn't get hidden behind system UI */
+    @supports (padding: max(0px)) {
+      body {
+        padding-bottom: max(env(safe-area-inset-bottom), 0px);
+      }
+    }
+  </style>
+</body>
+
+</html>

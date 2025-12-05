@@ -1,0 +1,29 @@
+{
+  "appId": "com.q8basket.app",
+  "appName": "Q8Basket",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true,
+    "appendUserAgent": "Q8BasketApp",
+    "overrideUserAgent": "Q8BasketApp",
+    "backgroundColor": "#ffffff",
+    "allowNavigation": [
+      "http://localhost:*",
+      "https://localhost:*"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ffffff",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "light",
+      "backgroundColor": "transparent",
+      "overlaysWebView": true
+    }
+  }
+}
