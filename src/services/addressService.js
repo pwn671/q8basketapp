@@ -233,7 +233,8 @@ class AddressService {
 
   async fetchLocations() {
     try {
-      const response = await fetch(`${this.baseURL}/front/locations`, {
+      const url = `${this.baseURL}/front/locations`;
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

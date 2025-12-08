@@ -28,7 +28,7 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const googleLoginRef = useRef(null);
-  
+  const lastErrorRef = useRef(null);
 
   const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -94,7 +94,14 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
   useEffect(() => {
     if (error) {
       const message = error.message || "Something went wrong";
-      toast.error(message);
+      // Prevent duplicate error toasts
+      if (lastErrorRef.current !== message) {
+        lastErrorRef.current = message;
+        toast.error(message);
+      }
+    } else {
+      // Reset when error is cleared
+      lastErrorRef.current = null;
     }
   }, [error]);
 
@@ -158,7 +165,7 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
 
         // Set flag to show offer popup after login
         localStorage.setItem('justLoggedIn', 'true');
-        toast.success("Google login successful!");
+        // Don't show toast here - let the redirect useEffect handle it
         // Navigation will happen automatically via useEffect when user and token are set
       } else {
         // Handle error response

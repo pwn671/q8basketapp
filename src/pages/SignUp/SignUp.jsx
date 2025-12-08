@@ -12,6 +12,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
 import { formatValidationErrors } from '../../utils/errorHandler';
 import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp'; // ✅ your new hook
+import addressService from '../../services/addressService';
+import config from '../../config/env';
 
 export default function SignUp({ onSignIn, onRegistrationSuccess }) {
   const isMobileApp = Capacitor.isNativePlatform();
@@ -34,11 +36,12 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
   const { setResetEmail } = usePasswordReset();  // Get setter from PasswordResetContext
   const googleLoginRef = useRef(null);
   const navigate = useNavigate();
+  const lastErrorRef = useRef(null);
 
   const dispatch = useDispatch();
 
-  const BASE_URL = import.meta.env.VITE_APP_URL;
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  // Use config for API URLs (consistent with other pages like Category.jsx, SearchPage.jsx)
+  const BASE_URL = config.BACKEND_URL; // For auth endpoints and images
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -136,13 +139,20 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
         errorMessage = typeof error === 'string' ? error : 'Registration failed. Please try again.';
       }
 
-      toast.error(errorMessage);
+      // Prevent duplicate error toasts
+      if (lastErrorRef.current !== errorMessage) {
+        lastErrorRef.current = errorMessage;
+        toast.error(errorMessage);
+      }
+    } else {
+      // Reset when error is cleared
+      lastErrorRef.current = null;
     }
   }, [error]);
 
   useEffect(() => {
     if (isRegistered) {
-      toast.success('Registration successful!');
+      // Reset the flag, but don't show toast here - let the redirect useEffect handle it
       setTimeout(() => {
         // Call onRegistrationSuccess if provided, otherwise fallback to onSignIn
         const callback = onRegistrationSuccess || onSignIn;
@@ -155,19 +165,17 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
   // Fetch cities from /front/locations
   useEffect(() => {
     const fetchCities = async () => {
-      console.log(`${BASE_URL}front/locations`)
       try {
-        const res = await fetch(`${BASE_URL}api/front/locations`);
-        const data = await res.json();
-        console.log(data)
-        if (data.status && Array.isArray(data.locations)) {
-          setCities(data.locations);
+        const result = await addressService.fetchLocations();
+        
+        if (result.success && Array.isArray(result.data)) {
+          setCities(result.data);
         } else {
-          toast.error("Failed to load cities.");
+          toast.error(result.error || "Failed to load cities.");
         }
       } catch (err) {
         console.error("Error fetching cities:", err);
-        toast.error("Error fetching city list");
+        toast.error("Error fetching city list: " + (err.message || "Unknown error"));
       }
     };
     fetchCities();
@@ -246,7 +254,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
         avatar: picture
       };
 
-      const res = await fetch(`${API_BASE_URL}/user/social/login`, {
+      const res = await fetch(`${BASE_URL}/user/social/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -278,7 +286,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
 
         // Set flag to show offer popup after login
         localStorage.setItem('justLoggedIn', 'true');
-        toast.success("Google signup successful!");
+        // Don't show toast here - let the redirect useEffect handle it
         // Navigation will happen automatically via useEffect when user and token are set
       } else {
         // Handle error response
@@ -451,7 +459,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
     <div
       className={styles.root}
       style={{
-        backgroundImage: `url(${BASE_URL}api/image/o/assets/images/app/login-bg.png)`,
+        backgroundImage: `url(${BASE_URL}/image/o/assets/images/app/login-bg.png)`,
       }}
       aria-label="Sign Up Screen"
     >
