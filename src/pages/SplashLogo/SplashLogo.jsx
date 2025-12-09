@@ -1,14 +1,15 @@
 import React from 'react';
 import styles from './SplashLogo.module.css';
-
-const BASE_URL = import.meta.env.VITE_APP_URL;;
+import config from '../../config/env';
 
 export default function SplashLogo({ onNext }) {
+  const BASE_URL = config.BACKEND_URL; // Use config for consistency with SignUp/SignIn
+
   return (
     <div className="app-container"> {/* Center content using app-container */}
       <div className="screen splash-logo">
         <img
-          src={`${BASE_URL}api/image/o/assets/images/app/logo-vertical.png`}
+          src={`${BASE_URL}/image/o/assets/images/app/logo-vertical.png`}
           alt="Q8 Basket Logo"
           className={styles.logoLarge}
           onClick={onNext}

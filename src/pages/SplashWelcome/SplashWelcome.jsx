@@ -2,9 +2,10 @@ import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp'; // ✅ your new hook
 import styles from './SplashWelcome.module.css';
+import config from '../../config/env';
 
 export default function SplashWelcome({ onContinue }) {
-  const BASE_URL = import.meta.env.VITE_APP_URL;
+  const BASE_URL = config.BACKEND_URL; // Use config for consistency with SignUp/SignIn
   const isMobileApp = Capacitor.isNativePlatform();
 
   // 🔒 Prevent overall window scrolling on phone app
@@ -14,7 +15,7 @@ export default function SplashWelcome({ onContinue }) {
     <div
       className={`${styles.root} ${isMobileApp ? styles.mobileApp : ''}`}
       style={{
-        backgroundImage: `url(${BASE_URL}api/image/o/assets/images/app/login-bg.png)`,
+        backgroundImage: `url(${BASE_URL}/image/o/assets/images/app/login-bg.png)`,
       }}
     >
       <div className={styles.card}>
@@ -24,7 +25,7 @@ export default function SplashWelcome({ onContinue }) {
         {/* Logo */}
         <div className={styles.logoInline}>
           <img
-            src={`${BASE_URL}api/image/o/assets/images/app/logo-vertical.png`}
+            src={`${BASE_URL}/image/o/assets/images/app/logo-vertical.png`}
             alt="Logo"
           />
         </div>
