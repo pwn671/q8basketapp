@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
-import { Capacitor } from '@capacitor/core';
 import "react-toastify/dist/ReactToastify.css";
 import styles from "./SignIn.module.css";
 import layoutStyles from "../../styles/Layout.module.css";
@@ -13,11 +12,8 @@ import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp'; // ✅ 
 import config from '../../config/env';
 
 export default function SignIn({ onForgotPassword, onSignUp }) {
-  const isMobileApp = Capacitor.isNativePlatform();
-  // Use mobile client ID for mobile app, web client ID for web
-  const GOOGLE_CLIENT_ID = isMobileApp 
-    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID)
-    : import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  // Use single Web OAuth Client ID for all platforms (web and mobile)
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -35,51 +31,6 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
   const BASE_URL = config.BACKEND_URL; // For auth endpoints and images
 
   useLockBodyScrollOnApp();
-
-  // ✅ Handle OAuth redirect callback for mobile app
-  useEffect(() => {
-    const isCapacitor = Capacitor.isNativePlatform();
-    if (!isCapacitor) return; // Only handle for mobile app
-
-    // Check for OAuth callback in URL fragment (id_token response)
-    const hash = window.location.hash;
-    if (hash && hash.includes('id_token=')) {
-      try {
-        // Extract id_token from URL fragment
-        const params = new URLSearchParams(hash.substring(1)); // Remove # and parse
-        const idToken = params.get('id_token');
-        const state = params.get('state');
-        const error = params.get('error');
-
-        if (error) {
-          toast.error(`Google login failed: ${error}`);
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-
-        if (idToken) {
-          // Verify state matches what we stored
-          const storedState = localStorage.getItem('google_oauth_state');
-          if (state && storedState && state !== storedState) {
-            toast.error("Security error: State mismatch");
-            window.history.replaceState({}, document.title, window.location.pathname);
-            return;
-          }
-
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          localStorage.removeItem('google_oauth_state');
-
-          // Process the token as if it came from GoogleLogin component
-          handleGoogleLogin({ credential: idToken });
-        }
-      } catch (err) {
-        toast.error("Failed to process Google login callback");
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }, []); // Run once on mount
 
   // ✅ Redirect on successful login
   useEffect(() => {
@@ -202,140 +153,6 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
     toast.error("Google login failed. Please try again.");
   };
 
-  // ✅ Trigger Google Login from custom button
-  const handleGoogleButtonClick = async (e) => {
-    // Check if we're in a Capacitor environment (mobile app)
-    const isCapacitor = Capacitor.isNativePlatform();
-    
-    if (isCapacitor) {
-      // For mobile: Use direct OAuth flow with Google One Tap
-      // The @react-oauth/google library doesn't work well in WebView
-      // So we'll use a direct approach
-      e.preventDefault();
-      e.stopPropagation();
-      try {
-        toast.info("Opening Google sign-in...");
-        
-        // Use Google's OAuth 2.0 implicit flow
-        const state = Math.random().toString(36).substring(2, 15);
-        localStorage.setItem('google_oauth_state', state);
-        
-        // For mobile apps, use custom URL scheme; for web, use origin
-        const redirectUri = isMobileApp 
-          ? 'com.q8basket.app:/oauth2redirect'
-          : `${window.location.origin}${window.location.pathname}`;
-        
-        const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-          `client_id=${GOOGLE_CLIENT_ID}&` +
-          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-          `response_type=id_token&` +
-          `scope=openid%20email%20profile&` +
-          `state=${state}&` +
-          `nonce=${Math.random().toString(36).substring(2, 15)}`;
-        
-        // Try to use Capacitor Browser plugin if available
-        // Check if Browser plugin is available without importing
-        let browserOpened = false;
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-          try {
-            await window.Capacitor.Plugins.Browser.open({ 
-              url: oauthUrl
-            });
-            browserOpened = true;
-          } catch (browserErr) {
-            // Browser plugin error, using fallback
-          }
-        }
-        
-        // Fallback: use window.location if Browser plugin not available
-        if (!browserOpened) {
-          window.location.href = oauthUrl;
-        }
-      } catch (err) {
-        toast.error("Failed to open Google login. Please try again.");
-      }
-    } else {
-      // For web: Use a more reliable approach with retries
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!googleLoginRef.current) {
-        toast.error("Google login button not ready. Please try again.");
-        return;
-      }
-
-      // Function to attempt clicking the Google button
-      const attemptClick = () => {
-        const wrapper = googleLoginRef.current;
-        if (!wrapper) return false;
-
-        // Try multiple strategies
-        // Strategy 1: Find and click the iframe
-        const iframe = wrapper.querySelector('iframe');
-        if (iframe) {
-          // Since we can't directly click iframe content due to CORS,
-          // we'll use a workaround: temporarily make the GoogleLogin visible and clickable
-          // by changing pointer-events
-          wrapper.style.pointerEvents = 'auto';
-          wrapper.style.opacity = '0.01'; // Almost invisible but clickable
-          
-          // Create a click at the center of the iframe
-          const rect = iframe.getBoundingClientRect();
-          const clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window,
-            detail: 1,
-            clientX: rect.left + rect.width / 2,
-            clientY: rect.top + rect.height / 2,
-            button: 0
-          });
-          
-          // Dispatch on iframe
-          iframe.dispatchEvent(clickEvent);
-          
-          // Also try on wrapper
-          wrapper.dispatchEvent(clickEvent);
-          
-          // Reset after a moment
-          setTimeout(() => {
-            wrapper.style.pointerEvents = 'none';
-            wrapper.style.opacity = '0';
-          }, 100);
-          
-          return true;
-        }
-
-        // Strategy 2: Find any clickable div
-        const clickableDiv = wrapper.querySelector('div[role="button"], div[tabindex="0"], button');
-        if (clickableDiv) {
-          clickableDiv.click();
-          return true;
-        }
-
-        // Strategy 3: Click wrapper directly
-        wrapper.click();
-        return true;
-      };
-
-      // Try immediately
-      let clicked = attemptClick();
-      
-      // If not successful, retry with delays (button might still be loading)
-      if (!clicked) {
-        for (let i = 0; i < 3; i++) {
-          await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
-          clicked = attemptClick();
-          if (clicked) break;
-        }
-      }
-
-      if (!clicked) {
-        toast.warn("Please click the Google sign-in button directly.");
-      }
-    }
-  };
-
   return (
     <>
       <div
@@ -436,99 +253,61 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
             {loading ? "Signing in..." : "Sign In"}
           </button>
 
-          {/* ✅ Social Sign-in */}
-          {/* <button
-            type="button"
-            className={styles.socialButton}
-            aria-label="Sign in with Apple"
-            onClick={() => handleSocialLogin("apple")}
-          >
-            <img
-              src="/icons/apple.svg"
-              alt="Apple Logo"
-              className={styles.socialIcon}
-              draggable={false}
-            />
-            Sign In With Apple
-          </button> */}
-
+          {/* ✅ Social Sign-in - Use Web OAuth flow for all platforms */}
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            {Capacitor.isNativePlatform() ? (
-              // For mobile: Use custom button that triggers OAuth flow
-              <button
-                type="button"
-                className={styles.socialButton}
-                aria-label="Sign in with Google"
-                onClick={handleGoogleButtonClick}
+            <div style={{ position: 'relative', width: '100%', minHeight: '48px' }}>
+              {/* GoogleLogin button - positioned to receive clicks */}
+              <div 
+                ref={googleLoginRef}
                 style={{ 
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
                   width: '100%',
-                  cursor: 'pointer'
+                  height: '100%',
+                  opacity: 0.01, // Almost invisible but still clickable
+                  pointerEvents: 'auto',
+                  zIndex: 1,
+                  overflow: 'visible'
                 }}
+              >
+                <GoogleLogin
+                  onSuccess={handleGoogleLogin}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  width="100%"
+                  useOneTap={false}
+                />
+              </div>
+              {/* Custom styled overlay - visual only, clicks pass through naturally */}
+              <div
+                className={styles.socialButton}
+                style={{ 
+                  position: 'relative',
+                  zIndex: 2,
+                  width: '100%',
+                  pointerEvents: 'none', // Clicks pass through to GoogleLogin below
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  userSelect: 'none' // Prevent text selection
+                }}
+                aria-hidden="true" // Screen readers should focus on GoogleLogin
               >
                 <img
                   src="/icons/google.svg"
-                  alt="Google Logo"
+                  alt=""
                   className={styles.socialIcon}
                   draggable={false}
+                  aria-hidden="true"
                 />
-                Sign In With Google
-              </button>
-            ) : (
-              // For web: Make GoogleLogin clickable by positioning it correctly
-              <div style={{ position: 'relative', width: '100%', minHeight: '48px' }}>
-                {/* GoogleLogin button - positioned to receive clicks */}
-                <div 
-                  ref={googleLoginRef}
-                  style={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0.01, // Almost invisible but still clickable
-                    pointerEvents: 'auto',
-                    zIndex: 1,
-                    overflow: 'visible'
-                  }}
-                >
-                  <GoogleLogin
-                    onSuccess={handleGoogleLogin}
-                    onError={handleGoogleError}
-                    theme="outline"
-                    size="large"
-                    text="signin_with"
-                    shape="rectangular"
-                    width="100%"
-                    useOneTap={false}
-                  />
-                </div>
-                {/* Custom styled overlay - visual only, clicks pass through naturally */}
-                <div
-                  className={styles.socialButton}
-                  style={{ 
-                    position: 'relative',
-                    zIndex: 2,
-                    width: '100%',
-                    pointerEvents: 'none', // Clicks pass through to GoogleLogin below
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    userSelect: 'none' // Prevent text selection
-                  }}
-                  aria-hidden="true" // Screen readers should focus on GoogleLogin
-                >
-                  <img
-                    src="/icons/google.svg"
-                    alt=""
-                    className={styles.socialIcon}
-                    draggable={false}
-                    aria-hidden="true"
-                  />
-                  <span>Sign In With Google</span>
-                </div>
+                <span>Sign In With Google</span>
               </div>
-            )}
+            </div>
           </GoogleOAuthProvider>
 
           {/* Sign Up */}
