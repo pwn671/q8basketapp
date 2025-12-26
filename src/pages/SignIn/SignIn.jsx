@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import styles from "./SignIn.module.css";
 import layoutStyles from "../../styles/Layout.module.css";
 import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp'; // ✅ your new hook
+import config from '../../config/env';
 
 export default function SignIn({ onForgotPassword, onSignUp }) {
   const isMobileApp = Capacitor.isNativePlatform();
@@ -30,7 +31,8 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
   const googleLoginRef = useRef(null);
   const lastErrorRef = useRef(null);
 
-  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  // Use config for API URLs (consistent with SignUp.jsx and other pages)
+  const BASE_URL = config.BACKEND_URL; // For auth endpoints and images
 
   useLockBodyScrollOnApp();
 
