@@ -1,18 +1,20 @@
 /* Category Cards */
 .categoryCard {
-  flex: 0 0 23%;
-  height: 70px;
+  flex: 0 0 28%;
+  min-width: 90px;
+  height: 85px;
   background: #f0f0f0;
   border-radius: 18px;
-  padding: 7px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   /* box-shadow: 0 6px 12px rgba(102, 102, 102, 0.12); */
   cursor: pointer;
   transition: box-shadow 0.3s ease;
+  box-sizing: border-box;
 }
 
 .categoryCard:hover {
@@ -24,13 +26,22 @@
   height: 35px;
   object-fit: contain;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .categoryCard span {
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   color: #1a1a1a;
   text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  display: block;
+  padding: 0 4px;
+  max-width: 100%;
 }
 
 /* Scrollbar styles for Firefox */
