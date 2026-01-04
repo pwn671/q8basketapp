@@ -431,7 +431,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
         {/* ✅ Social Sign-up - Use Web OAuth flow for all platforms */}
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <div style={{ position: 'relative', width: '100%', minHeight: '48px', marginTop: '12px' }}>
-            {/* GoogleLogin button - positioned to receive clicks */}
+            {/* GoogleLogin button - must be fully interactive for iframe */}
             <div 
               ref={googleLoginRef}
               style={{ 
@@ -440,10 +440,8 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                opacity: 0.01, // Almost invisible but still clickable
-                pointerEvents: 'auto',
                 zIndex: 1,
-                overflow: 'visible'
+                pointerEvents: 'auto' // CRITICAL: Must allow pointer events for iframe
               }}
             >
               <GoogleLogin
@@ -457,21 +455,24 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
                 useOneTap={false}
               />
             </div>
-            {/* Custom styled overlay - visual only, clicks pass through naturally */}
+            {/* Custom styled overlay - visual only, clicks MUST pass through */}
             <div
               className={styles.socialButton}
               style={{ 
-                position: 'relative',
-                zIndex: 2,
+                position: 'absolute',
+                top: 0,
+                left: 0,
                 width: '100%',
-                pointerEvents: 'none', // Clicks pass through to GoogleLogin below
+                height: '100%',
+                zIndex: 2,
+                pointerEvents: 'none', // CRITICAL: Allow clicks to pass through to iframe
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                userSelect: 'none' // Prevent text selection
+                userSelect: 'none'
               }}
-              aria-hidden="true" // Screen readers should focus on GoogleLogin
+              aria-hidden="true"
             >
               <img
                 src="/icons/google.svg"
