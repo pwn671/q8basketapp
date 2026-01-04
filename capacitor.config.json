@@ -6,12 +6,17 @@
     "allowMixedContent": true,
     "captureInput": true,
     "webContentsDebuggingEnabled": true,
-    "appendUserAgent": "Q8BasketApp",
-    "overrideUserAgent": "Q8BasketApp",
+    "appendUserAgent": " Q8BasketApp",
     "backgroundColor": "#ffffff",
     "allowNavigation": [
       "http://localhost:*",
-      "https://localhost:*"
+      "https://localhost:*",
+      "https://accounts.google.com/*",
+      "https://accounts.youtube.com/*",
+      "https://*.google.com/*",
+      "https://*.googleapis.com/*",
+      "https://app.q8basket.com/*",
+      "https://demo.q8basket.com/*"
     ]
   },
   "plugins": {

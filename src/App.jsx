@@ -9,6 +9,7 @@ import Verified from './pages/Verified/Verified';
 import SignUp from './pages/SignUp/SignUp';
 import OTPVerification from './pages/OTPVerification/OTPVerification';
 import OTPVerificationReg from './pages/OTPVerificatioReg/OTPVerificationReg';
+import OAuthCallback from './pages/OAuthCallback/OAuthCallback';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
 import Category from './pages/Category/Category';
 import Home from './pages/Home/Home';
@@ -53,6 +54,7 @@ export default function App() {
         {/* Always Accessible */}
         <Route path="/" element={<SplashLogoWithRedirect />} />
         <Route path="/welcome" element={<SplashWelcomeWithContinue />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* Public Only Routes */}
         <Route

@@ -24,12 +24,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth Redirect Handler -->
+            <!-- OAuth Redirect Handler (legacy) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.q8basket.app" android:host="oauth2redirect" />
+            </intent-filter>
+
+            <!-- OAuth Callback Handler (new) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.q8basket.app" android:host="oauth" />
             </intent-filter>
 
         </activity>

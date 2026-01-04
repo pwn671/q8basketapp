@@ -5,15 +5,18 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import "react-toastify/dist/ReactToastify.css";
 import styles from "./SignIn.module.css";
 import layoutStyles from "../../styles/Layout.module.css";
-import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp'; // ✅ your new hook
+import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp';
 import config from '../../config/env';
 
 export default function SignIn({ onForgotPassword, onSignUp }) {
   // Use single Web OAuth Client ID for all platforms (web and mobile)
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const isMobileApp = Capacitor.isNativePlatform();
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -29,8 +32,33 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
 
   // Use config for API URLs (consistent with SignUp.jsx and other pages)
   const BASE_URL = config.BACKEND_URL; // For auth endpoints and images
+  const APP_URL = config.APP_URL; // For OAuth redirects
 
   useLockBodyScrollOnApp();
+
+  // ✅ Handle OAuth redirect callback for mobile app
+  useEffect(() => {
+    if (!isMobileApp) return; // Only handle for mobile app
+
+    // Check for OAuth token in URL parameters (from deep link)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const error = urlParams.get('error');
+
+    if (error) {
+      toast.error(`Google login failed: ${error}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (token) {
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Process the token
+      handleGoogleLogin({ credential: token });
+    }
+  }, [isMobileApp]);
 
   // ✅ Redirect on successful login
   useEffect(() => {
@@ -153,6 +181,36 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
     toast.error("Google login failed. Please try again.");
   };
 
+  // ✅ Trigger Google Login from custom button (for mobile app)
+  const handleGoogleButtonClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      // Generate state for security
+      const state = Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('google_oauth_state', state);
+
+      // Use HTTPS redirect URL for Web Client ID
+      const redirectUri = `${APP_URL}/oauth/callback`;
+
+      // Build OAuth URL
+      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${GOOGLE_CLIENT_ID}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=id_token&` +
+        `scope=openid%20email%20profile&` +
+        `state=${state}&` +
+        `nonce=${Math.random().toString(36).substring(2, 15)}`;
+
+      // Open in system browser
+      await Browser.open({ url: oauthUrl });
+    } catch (err) {
+      console.error('Error opening Google login:', err);
+      toast.error("Failed to open Google login. Please try again.");
+    }
+  };
+
   return (
     <>
       <div
@@ -253,62 +311,80 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
             {loading ? "Signing in..." : "Sign In"}
           </button>
 
-          {/* ✅ Social Sign-in - Use Web OAuth flow for all platforms */}
+          {/* ✅ Social Sign-in - Different approach for web vs mobile */}
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <div style={{ position: 'relative', width: '100%', minHeight: '48px' }}>
-              {/* GoogleLogin button - must be fully interactive for iframe */}
-              <div 
-                ref={googleLoginRef}
-                style={{ 
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: 1,
-                  pointerEvents: 'auto' // CRITICAL: Must allow pointer events for iframe
-                }}
-              >
-                <GoogleLogin
-                  onSuccess={handleGoogleLogin}
-                  onError={handleGoogleError}
-                  theme="outline"
-                  size="large"
-                  text="signin_with"
-                  shape="rectangular"
-                  width="100%"
-                  useOneTap={false}
-                />
-              </div>
-              {/* Custom styled overlay - visual only, clicks MUST pass through */}
-              <div
+            {isMobileApp ? (
+              // For mobile app: Use custom button that opens OAuth in system browser
+              <button
+                type="button"
                 className={styles.socialButton}
-                style={{ 
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: 2,
-                  pointerEvents: 'none', // CRITICAL: Allow clicks to pass through to iframe
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  userSelect: 'none'
-                }}
-                aria-hidden="true"
+                aria-label="Sign in with Google"
+                onClick={handleGoogleButtonClick}
               >
                 <img
                   src="/icons/google.svg"
-                  alt=""
+                  alt="Google Logo"
                   className={styles.socialIcon}
                   draggable={false}
-                  aria-hidden="true"
                 />
-                <span>Sign In With Google</span>
+                Sign In With Google
+              </button>
+            ) : (
+              // For web: Use @react-oauth/google with iframe button
+              <div style={{ position: 'relative', width: '100%', minHeight: '48px' }}>
+                {/* GoogleLogin button - positioned to receive clicks */}
+                <div 
+                  ref={googleLoginRef}
+                  style={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0.01, // Almost invisible but still clickable
+                    pointerEvents: 'auto',
+                    zIndex: 1,
+                    overflow: 'visible'
+                  }}
+                >
+                  <GoogleLogin
+                    onSuccess={handleGoogleLogin}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                    shape="rectangular"
+                    width="100%"
+                    useOneTap={false}
+                  />
+                </div>
+                {/* Custom styled overlay - visual only, clicks pass through */}
+                <div
+                  className={styles.socialButton}
+                  style={{ 
+                    position: 'relative',
+                    zIndex: 2,
+                    width: '100%',
+                    pointerEvents: 'none', // Clicks pass through to GoogleLogin below
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    userSelect: 'none'
+                  }}
+                  aria-hidden="true"
+                >
+                  <img
+                    src="/icons/google.svg"
+                    alt=""
+                    className={styles.socialIcon}
+                    draggable={false}
+                    aria-hidden="true"
+                  />
+                  <span>Sign In With Google</span>
+                </div>
               </div>
-            </div>
+            )}
           </GoogleOAuthProvider>
 
           {/* Sign Up */}
