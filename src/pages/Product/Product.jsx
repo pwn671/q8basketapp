@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavBar from "../../components/navbar/NavBar";
 import styles from "./Product.module.css";
@@ -17,7 +17,7 @@ import { formatCurrency } from "../../config/currency";
 import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp';
 
 // Helper function to build API URL with all parameters
-const buildProductsUrl = (baseUrl, categoryIds = null, sort = null, highlight = null, limit = 10000, offset = 0) => {
+const buildProductsUrl = (baseUrl, categoryIds = null, sort = null, highlight = null, limit = 20, offset = 0) => {
   let url = `${baseUrl}/front/products`;
   const params = [];
 
@@ -56,10 +56,12 @@ export default function ProductPage() {
   const [sortOption, setSortOption] = useState("relevance");
   const [activeFilters, setActiveFilters] = useState([]);
   const [categories, setCategories] = useState([]); // Add categories state
-  const [limit] = useState(10000); // Products per page - set high to show all products
+  const [limit] = useState(20); // Products per page - load 20 at a time
   const [offset, setOffset] = useState(0); // Current page offset
   const [totalCount, setTotalCount] = useState(0); // Total products available
   const [loadingMore, setLoadingMore] = useState(false); // Loading more products state
+  const observerRef = useRef(null); // Ref for intersection observer
+  const loadMoreTriggerRef = useRef(null); // Ref for the element that triggers load more
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,7 +113,10 @@ export default function ProductPage() {
   // Fetch products based on category, sort, and pagination
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoading(true);
+      // Only set loading for initial load, use loadingMore for pagination
+      if (offset === 0) {
+        setLoading(true);
+      }
       setError("");
 
       const result = await safeApiCall(
@@ -139,15 +144,17 @@ export default function ProductPage() {
             offset
           );
           
+          console.log('Fetching products:', url);
+          
           const response = await fetch(url);
           const data = await parseApiResponse(response);
 
           if (data.status && Array.isArray(data.data.data)) {
-            // Store totalCount from API response
-            if (data.data.totalCount !== undefined) {
-              setTotalCount(data.data.totalCount);
-            }
-            return { products: data.data.data, totalCount: data.data.totalCount };
+            // totalCount is at root level, products are at data.data
+            const total = data.totalCount || 0;
+            setTotalCount(total);
+            console.log(`Loaded ${data.data.data.length} products, total: ${total}, offset: ${offset}`);
+            return { products: data.data.data, totalCount: total };
           } else {
             setError("No products found.");
             return { products: [], totalCount: 0 };
@@ -166,7 +173,11 @@ export default function ProductPage() {
         setProducts(result?.products || []);
         setOriginalProducts(result?.products || []);
       } else {
-        setProducts(prev => [...prev, ...(result?.products || [])]);
+        setProducts(prev => {
+          const newProducts = [...prev, ...(result?.products || [])];
+          console.log(`Total products now: ${newProducts.length}`);
+          return newProducts;
+        });
         setOriginalProducts(prev => [...prev, ...(result?.products || [])]);
       }
       setLoading(false);
@@ -257,11 +268,10 @@ export default function ProductPage() {
         const response = await fetch(url);
         const data = await parseApiResponse(response);
         if (data.status && Array.isArray(data.data.data)) {
-          // Store totalCount from API response
-          if (data.data.totalCount !== undefined) {
-            setTotalCount(data.data.totalCount);
-          }
-          return { products: data.data.data, totalCount: data.data.totalCount };
+          // totalCount is at root level, products are at data.data
+          const total = data.totalCount || 0;
+          setTotalCount(total);
+          return { products: data.data.data, totalCount: total };
         }
         return { products: [], totalCount: 0 };
       },
@@ -278,13 +288,58 @@ export default function ProductPage() {
     setOffset(0); // Reset pagination when sorting changes
   };
 
-  // Handle load more products
-  const handleLoadMore = () => {
-    if (!loadingMore && products.length < totalCount) {
+  // Handle load more products (triggered by intersection observer)
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && !loading && products.length < totalCount) {
       setLoadingMore(true);
       setOffset(prev => prev + limit);
     }
-  };
+  }, [loadingMore, loading, products.length, totalCount, limit]);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    // Cleanup previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Create new observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        // If the trigger element is visible and we have more products to load
+        if (entries[0].isIntersecting && products.length > 0 && products.length < totalCount) {
+          console.log('Intersection triggered - loading more products', {
+            currentProducts: products.length,
+            totalCount: totalCount,
+            loadingMore: loadingMore,
+            loading: loading
+          });
+          handleLoadMore();
+        }
+      },
+      {
+        root: null, // viewport
+        rootMargin: '200px', // Start loading 200px before reaching the bottom
+        threshold: 0
+      }
+    );
+
+    // Observe the trigger element
+    if (loadMoreTriggerRef.current) {
+      observerRef.current.observe(loadMoreTriggerRef.current);
+      console.log('Intersection observer attached', {
+        productsLength: products.length,
+        totalCount: totalCount
+      });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [products.length, totalCount, handleLoadMore, loadingMore, loading]);
 
   // Add this function with more detailed logic
   const getPageTitle = () => {
@@ -409,58 +464,63 @@ export default function ProductPage() {
                   </div>
                 );
               })}
-
-              {/* Filter Modal */}
-              <Filter
-                show={showFilter}
-                onClose={() => setShowFilter(false)}
-                filters={categories}
-                onApply={handleFilter}
-              />
-
-              {/* Sort Modal */}
-              <Sort
-                show={showSort}
-                onClose={() => setShowSort(false)}
-                options={SortOptions}
-                defaultValue={sortOption}
-                onApply={handleSortChange}
-              />
             </div>
 
-            {loading && offset === 0 && <p>Loading products...</p>}
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {/* Loading and error states */}
+            {loading && offset === 0 && (
+              <p style={{ textAlign: 'center', marginTop: '20px' }}>Loading products...</p>
+            )}
+            {error && <p style={{ color: "red", textAlign: 'center', marginTop: '20px' }}>{error}</p>}
             {!loading && !error && products.length === 0 && (
               <p className={styles.noResults}>
                 No products found in this category.
               </p>
             )}
 
-            {/* Load More Button */}
-            {!loading && !error && products.length > 0 && products.length < totalCount && (
-              <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '20px' }}>
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  style={{
-                    padding: '12px 24px',
-                    fontSize: '16px',
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: loadingMore ? 'not-allowed' : 'pointer',
-                    opacity: loadingMore ? 0.6 : 1
-                  }}
-                >
-                  {loadingMore ? 'Loading...' : `Load More (${products.length} of ${totalCount})`}
-                </button>
+            {/* Infinite scroll trigger - element that triggers loading when visible */}
+            {!error && products.length > 0 && products.length < totalCount && (
+              <div 
+                ref={loadMoreTriggerRef}
+                style={{ 
+                  height: '40px', 
+                  margin: '20px 0',
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {loadingMore ? (
+                  <p style={{ fontSize: '14px', color: '#666' }}>Loading more products...</p>
+                ) : (
+                  <p style={{ fontSize: '12px', color: '#999' }}>Scroll for more</p>
+                )}
               </div>
             )}
 
-            {loadingMore && offset > 0 && (
-              <p style={{ textAlign: 'center', marginTop: '10px' }}>Loading more products...</p>
+            {/* Show total loaded message when all products are loaded */}
+            {!error && products.length > 0 && products.length >= totalCount && (
+              <p style={{ textAlign: 'center', margin: '20px 0', fontSize: '14px', color: '#666' }}>
+                All {totalCount} products loaded
+              </p>
             )}
+
+            {/* Filter Modal */}
+            <Filter
+              show={showFilter}
+              onClose={() => setShowFilter(false)}
+              filters={categories}
+              onApply={handleFilter}
+            />
+
+            {/* Sort Modal */}
+            <Sort
+              show={showSort}
+              onClose={() => setShowSort(false)}
+              options={SortOptions}
+              defaultValue={sortOption}
+              onApply={handleSortChange}
+            />
           </main>
         </div>
 

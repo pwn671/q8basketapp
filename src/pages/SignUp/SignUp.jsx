@@ -7,7 +7,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { useNavigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
@@ -17,10 +17,12 @@ import addressService from '../../services/addressService';
 import config from '../../config/env';
 
 export default function SignUp({ onSignIn, onRegistrationSuccess }) {
-  // Use single Web OAuth Client ID for all platforms (web and mobile)
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const isMobileApp = Capacitor.isNativePlatform();
-  const APP_URL = config.APP_URL; // For OAuth redirects
+  
+  // Use different client IDs for web and mobile
+  const GOOGLE_CLIENT_ID = isMobileApp 
+    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID)
+    : import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   const [fullName, setFullName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -276,57 +278,38 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
     toast.error("Google signup failed. Please try again.");
   };
 
-  // ✅ Handle OAuth redirect callback for mobile app
+  // ✅ Initialize Google Auth for mobile
   useEffect(() => {
-    if (!isMobileApp) return; // Only handle for mobile app
-
-    // Check for OAuth token in URL parameters (from deep link)
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const error = urlParams.get('error');
-
-    if (error) {
-      toast.error(`Google signup failed: ${error}`);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
+    if (isMobileApp) {
+      GoogleAuth.initialize({
+        clientId: GOOGLE_CLIENT_ID,
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
     }
+  }, [isMobileApp, GOOGLE_CLIENT_ID]);
 
-    if (token) {
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Process the token
-      handleGoogleSignup({ credential: token });
-    }
-  }, [isMobileApp]);
-
-  // ✅ Trigger Google Signup from custom button (for mobile app)
+  // ✅ Trigger Native Google Signup (for mobile app)
   const handleGoogleButtonClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
-      // Generate state for security
-      const state = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('google_oauth_state', state);
+      // Use native Google Sign-In
+      const user = await GoogleAuth.signIn();
+      
+      // Extract the ID token
+      const idToken = user.authentication.idToken;
 
-      // Use HTTPS redirect URL for Web Client ID
-      const redirectUri = `${APP_URL}/oauth/callback`;
+      if (!idToken) {
+        throw new Error('No ID token received from Google');
+      }
 
-      // Build OAuth URL
-      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${GOOGLE_CLIENT_ID}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=id_token&` +
-        `scope=openid%20email%20profile&` +
-        `state=${state}&` +
-        `nonce=${Math.random().toString(36).substring(2, 15)}`;
-
-      // Open in system browser
-      await Browser.open({ url: oauthUrl });
+      // Process the token using the same handler as web
+      await handleGoogleSignup({ credential: idToken });
     } catch (err) {
-      console.error('Error opening Google signup:', err);
-      toast.error("Failed to open Google signup. Please try again.");
+      console.error('Error with native Google signup:', err);
+      toast.error("Google signup failed. Please try again.");
     }
   };
  

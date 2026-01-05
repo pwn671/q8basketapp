@@ -9,8 +9,21 @@ import AuthInitializer from './components/AuthInitializer.jsx';
 import ThemeProvider from './components/theme/ThemeProvider.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { OfflineIndicator, ServiceWorkerUpdate } from './components/PWAUtils.jsx';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Capacitor } from '@capacitor/core';
 
 import './assets/styles/styles.css';
+
+// Initialize Google Auth ONLY for mobile platforms
+if (Capacitor.isNativePlatform()) {
+  const mobileClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  GoogleAuth.initialize({
+    clientId: mobileClientId,
+    scopes: ['profile', 'email'],
+    grantOfflineAccess: true,
+  });
+  console.log('Native Google Auth initialized for mobile with client ID:', mobileClientId);
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

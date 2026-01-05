@@ -41,7 +41,8 @@
   color: #666;
   cursor: pointer;
   transition: background 0.2s ease;
-  white-space: nowrap; /* Prevent text wrapping */
+  white-space: normal; /* Prevent text wrapping */
+  word-wrap: break-word;
 }
 
 .sidebar li img {
