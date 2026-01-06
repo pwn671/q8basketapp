@@ -36,7 +36,7 @@ export default function SearchPage() {
     
     const result = await safeApiCall(
       async () => {
-        const response = await fetch(`${BASE_URL}/front/search?min=100&search=${encodeURIComponent(query)}`);
+        const response = await fetch(`${BASE_URL}/front/search?search=${encodeURIComponent(query)}`);
         const data = await parseApiResponse(response);
         
         if (data.status && Array.isArray(data.data)) {

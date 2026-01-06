@@ -4,4 +4,6 @@
     <string name="title_activity_main">Q8Basket</string>
     <string name="package_name">com.q8basket.app</string>
     <string name="custom_url_scheme">com.q8basket.app</string>
+    <!-- Web Client ID for Google Sign-In server-side token validation -->
+    <string name="server_client_id">948766176517-cg6a06l9u1i161uiiabocrj8538vp3tr.apps.googleusercontent.com</string>
 </resources>

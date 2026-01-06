@@ -1,5 +1,5 @@
 .sidebar {
-  width: 60px;
+  width: 75px;
   flex: 0 0 auto;        /* Prevent resizing horizontally */
   min-height: 0;         /* Crucial: allow flex shrinking */
   height: 100%;          /* Use 100% of parent container, not viewport */
