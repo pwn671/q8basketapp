@@ -16,13 +16,49 @@ import './assets/styles/styles.css';
 
 // Initialize Google Auth ONLY for mobile platforms
 if (Capacitor.isNativePlatform()) {
-  const mobileClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  GoogleAuth.initialize({
-    clientId: mobileClientId,
-    scopes: ['profile', 'email'],
-    grantOfflineAccess: true,
+  console.log('========================================');
+  console.log('🚀 [INIT] Initializing Google Auth for mobile...');
+  console.log('========================================');
+  
+  const webClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  
+  if (!webClientId) {
+    console.error('❌ [INIT] VITE_GOOGLE_CLIENT_ID is not set! Google Sign-In will not work.');
+  } else {
+    console.log('✅ [INIT] Web Client ID found:', webClientId.substring(0, 30) + '...');
+    console.log('📋 [INIT] Full Web Client ID length:', webClientId.length);
+  }
+  
+  console.log('📋 [INIT] Environment check:', {
+    hasWebClientId: !!webClientId,
+    hasMobileClientId: !!import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE,
+    platform: Capacitor.getPlatform()
   });
-  console.log('Native Google Auth initialized for mobile with client ID:', mobileClientId);
+  
+  try {
+    console.log('🔄 [INIT] Calling GoogleAuth.initialize()...');
+    GoogleAuth.initialize({
+      clientId: webClientId,  // ✅ Use Web Client ID (required by plugin)
+      scopes: ['profile', 'email'],
+      grantOfflineAccess: true,
+    });
+    console.log('✅ [INIT] GoogleAuth.initialize() completed successfully');
+    console.log('📋 [INIT] Configuration:', {
+      clientId: webClientId.substring(0, 30) + '...',
+      scopes: ['profile', 'email'],
+      grantOfflineAccess: true
+    });
+  } catch (initError) {
+    console.error('❌ [INIT] Failed to initialize GoogleAuth:', initError);
+    console.error('❌ [INIT] Error details:', {
+      message: initError?.message,
+      stack: initError?.stack,
+      name: initError?.name,
+      code: initError?.code
+    });
+  }
+  
+  console.log('========================================');
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -52,15 +88,9 @@ if ('serviceWorker' in navigator) {
   const registerServiceWorker = () => {
     navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
       .then((registration) => {
-        console.log('Service Worker registered successfully:', registration.scope);
         
         // Don't wait for service worker to be ready - let app load normally
         if (registration.active) {
-          console.log('Service Worker is active');
-        } else if (registration.installing) {
-          console.log('Service Worker is installing (will activate after app loads)');
-        } else if (registration.waiting) {
-          console.log('Service Worker is waiting');
         }
         
         // Listen for updates (only relevant after first install)
@@ -95,6 +125,5 @@ if ('serviceWorker' in navigator) {
 
   // Listen for service worker updates
   window.addEventListener('sw-update-available', () => {
-    console.log('Service Worker update available');
   });
 }

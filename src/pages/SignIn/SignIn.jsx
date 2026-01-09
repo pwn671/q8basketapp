@@ -39,17 +39,6 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
 
   useLockBodyScrollOnApp();
 
-  // ✅ Initialize Google Auth for mobile
-  useEffect(() => {
-    if (isMobileApp) {
-      GoogleAuth.initialize({
-        clientId: GOOGLE_CLIENT_ID,
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-    }
-  }, [isMobileApp, GOOGLE_CLIENT_ID]);
-
   // ✅ Redirect on successful login
   useEffect(() => {
     if (user && token && !loading) {
@@ -91,8 +80,44 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
 
   // ✅ Handle Google Login
   const handleGoogleLogin = async (credentialResponse) => {
+    console.log('========================================');
+    console.log('🔄 [BACKEND] Processing Google login...');
+    console.log('========================================');
+    console.log('Credential response:', {
+      hasCredential: !!credentialResponse?.credential,
+      credentialLength: credentialResponse?.credential?.length || 0,
+      credentialPreview: credentialResponse?.credential?.substring(0, 50) + '...' || null,
+      allKeys: Object.keys(credentialResponse || {})
+    });
+    
     try {
-      const decoded = jwtDecode(credentialResponse.credential);
+      // Decode JWT token
+      let decoded;
+      try {
+        console.log('🔓 [BACKEND] Attempting to decode JWT token...');
+        decoded = jwtDecode(credentialResponse.credential);
+        console.log('✅ [BACKEND] JWT decoded successfully');
+        console.log('📋 [BACKEND] Decoded token data:', {
+          email: decoded.email,
+          name: decoded.name,
+          sub: decoded.sub,
+          picture: decoded.picture,
+          iss: decoded.iss,
+          aud: decoded.aud,
+          exp: decoded.exp,
+          iat: decoded.iat,
+          allKeys: Object.keys(decoded)
+        });
+      } catch (decodeError) {
+        console.error('❌ [BACKEND] JWT decode error:', decodeError);
+        console.error('Decode error details:', {
+          message: decodeError.message,
+          stack: decodeError.stack,
+          name: decodeError.name
+        });
+        throw new Error('Failed to decode Google token: ' + decodeError.message);
+      }
+
       const { email, name, sub: googleId, picture } = decoded;
 
       const body = {
@@ -104,13 +129,42 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
         avatar: picture
       };
 
+      console.log('📤 [BACKEND] Preparing request to backend...');
+      console.log('Request details:', { 
+        url: `${BASE_URL}/user/social/login`,
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        bodyPreview: { 
+          ...body, 
+          id_token: body.id_token.substring(0, 50) + '...' 
+        }
+      });
+
+      const requestStartTime = Date.now();
       const res = await fetch(`${BASE_URL}/user/social/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
+      const requestDuration = Date.now() - requestStartTime;
+      console.log(`📡 [BACKEND] Request completed in ${requestDuration}ms`);
+      console.log('Response status:', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok,
+        headers: Object.fromEntries(res.headers.entries())
+      });
+
       const data = await res.json();
+      console.log('📦 [BACKEND] Response data received:', {
+        hasStatus: 'status' in data,
+        status: data.status,
+        hasData: 'data' in data,
+        hasError: 'error' in data,
+        error: data.error,
+        fullResponse: data
+      });
 
       if (data.status && data.data) {
         // Dispatch loginUser.fulfilled action to save token and user (same as normal login)
@@ -140,7 +194,8 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
         // Navigation will happen automatically via useEffect when user and token are set
       } else {
         // Handle error response
-        const errorMessage = data?.error?.message || data?.error || "Google login failed!";
+        const errorMessage = data?.error?.message || data?.error || data?.message || "Google login failed!";
+        console.error('Backend returned error:', errorMessage, data);
         toast.error(errorMessage);
         
         // Dispatch loginUser.rejected to update error state
@@ -153,7 +208,14 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
         });
       }
     } catch (err) {
-      toast.error("Something went wrong during Google login.");
+      console.error('Exception in handleGoogleLogin:', err);
+      console.error('Exception details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
+      
+      toast.error(err.message || "Something went wrong during Google login.");
       
       // Dispatch loginUser.rejected to update error state
       dispatch({
@@ -176,22 +238,121 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
     e.preventDefault();
     e.stopPropagation();
 
+    console.log('========================================');
+    console.log('🔵 [GOOGLE LOGIN] Starting native Google Sign-In...');
+    console.log('========================================');
+    console.log('Platform check:', {
+      isMobileApp,
+      isNative: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform()
+    });
+    console.log('Client ID configuration:', {
+      GOOGLE_CLIENT_ID,
+      env_mobile: import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE,
+      env_web: import.meta.env.VITE_GOOGLE_CLIENT_ID
+    });
+    console.log('GoogleAuth object available:', typeof GoogleAuth !== 'undefined');
+    console.log('GoogleAuth.signIn available:', typeof GoogleAuth?.signIn === 'function');
+
     try {
+      console.log('📞 [GOOGLE LOGIN] Calling GoogleAuth.signIn()...');
+      const startTime = Date.now();
+      
       // Use native Google Sign-In
       const user = await GoogleAuth.signIn();
       
+      const duration = Date.now() - startTime;
+      console.log(`✅ [GOOGLE LOGIN] GoogleAuth.signIn() completed in ${duration}ms`);
+      console.log('📦 [GOOGLE LOGIN] User object received:', {
+        hasUser: !!user,
+        userKeys: user ? Object.keys(user) : null,
+        hasAuthentication: !!user?.authentication,
+        authenticationKeys: user?.authentication ? Object.keys(user.authentication) : null,
+        fullUserObject: user
+      });
+      
       // Extract the ID token
-      const idToken = user.authentication.idToken;
+      const idToken = user?.authentication?.idToken;
+      const accessToken = user?.authentication?.accessToken;
+
+      console.log('🔑 [GOOGLE LOGIN] Token extraction:', {
+        hasIdToken: !!idToken,
+        idTokenLength: idToken?.length || 0,
+        idTokenPreview: idToken ? idToken.substring(0, 50) + '...' : null,
+        hasAccessToken: !!accessToken,
+        accessTokenLength: accessToken?.length || 0
+      });
 
       if (!idToken) {
+        console.error('❌ [GOOGLE LOGIN] No ID token found in user object');
+        console.error('Full user object structure:', JSON.stringify(user, null, 2));
         throw new Error('No ID token received from Google');
       }
 
+      console.log('✅ [GOOGLE LOGIN] ID Token validated, proceeding to handleGoogleLogin...');
+      console.log('📤 [GOOGLE LOGIN] Calling handleGoogleLogin with token...');
+
       // Process the token using the same handler as web
       await handleGoogleLogin({ credential: idToken });
+      
+      console.log('✅ [GOOGLE LOGIN] handleGoogleLogin completed successfully');
     } catch (err) {
-      console.error('Error with native Google login:', err);
-      toast.error("Google login failed. Please try again.");
+      console.error('========================================');
+      console.error('❌ [GOOGLE LOGIN] Error with native Google login');
+      console.error('========================================');
+      console.error('Error object:', err);
+      console.error('Error type:', typeof err);
+      console.error('Error constructor:', err?.constructor?.name);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+        code: err.code,
+        cause: err.cause,
+        toString: err.toString(),
+        allProperties: Object.keys(err)
+      });
+      
+      // Try to extract more info if it's a stringified error
+      if (err.message && typeof err.message === 'string') {
+        console.error('Error message analysis:', {
+          message: err.message,
+          messageLength: err.message.length,
+          containsError: err.message.includes('error'),
+          containsFailed: err.message.includes('failed'),
+          containsWrong: err.message.includes('wrong')
+        });
+      }
+      
+      // Error code 10 is DEVELOPER_ERROR - provide specific guidance
+      if (err.code === '10' || err.code === 10) {
+        console.error('🔴 [GOOGLE LOGIN] Error Code 10 (DEVELOPER_ERROR) detected!');
+        console.error('🔴 [GOOGLE LOGIN] This usually means:');
+        console.error('   1. SHA-1 fingerprint mismatch in Google Cloud Console');
+        console.error('   2. Package name mismatch (should be: com.q8basket.app)');
+        console.error('   3. Android OAuth Client ID not properly configured');
+        console.error('🔴 [GOOGLE LOGIN] To fix:');
+        console.error('   1. Run: cd android && ./gradlew signingReport');
+        console.error('   2. Copy the SHA-1 from "Variant: debug" → "SHA1:"');
+        console.error('   3. Add it to Google Cloud Console → APIs & Services → Credentials');
+        console.error('   4. Verify package name is exactly: com.q8basket.app');
+        console.error('   5. Rebuild and reinstall the app');
+      }
+      
+      // Show more specific error message
+      let errorMsg = err.message || err.code || err.toString() || "Google login failed. Please try again.";
+      
+      // Provide user-friendly message for error code 10
+      if (err.code === '10' || err.code === 10) {
+        errorMsg = "Google Sign-In configuration error. Please check SHA-1 fingerprint and package name in Google Cloud Console.";
+      }
+      
+      console.error('🚨 [GOOGLE LOGIN] Showing error toast:', errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      console.log('========================================');
+      console.log('🏁 [GOOGLE LOGIN] handleGoogleButtonClick completed');
+      console.log('========================================');
     }
   };
 
@@ -296,50 +457,41 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
           </button>
 
           {/* ✅ Social Sign-in - Different approach for web vs mobile */}
-          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            {isMobileApp ? (
-              // For mobile app: Use custom button that opens OAuth in system browser
-              <button
-                type="button"
-                className={styles.socialButton}
-                aria-label="Sign in with Google"
-                onClick={handleGoogleButtonClick}
-              >
-                <img
-                  src="/icons/google.svg"
-                  alt="Google Logo"
-                  className={styles.socialIcon}
-                  draggable={false}
-                />
-                Sign In With Google
-              </button>
-            ) : (
-              // For web: Use @react-oauth/google with iframe button
+          {isMobileApp ? (
+            /* ================= MOBILE (CAPACITOR) ================= */
+            <button
+              type="button"
+              className={styles.socialButton}
+              aria-label="Sign in with Google"
+              onClick={handleGoogleButtonClick}
+            >
+              <img
+                src="/icons/google.svg"
+                alt="Google Logo"
+                className={styles.socialIcon}
+                draggable={false}
+              />
+              Sign In With Google
+            </button>
+          ) : (
+            /* ================= WEB (PWA / BROWSER) ================= */
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
               <div style={{ position: 'relative', width: '100%', minHeight: '48px' }}>
                 {/* GoogleLogin button - positioned to receive clicks */}
                 <div 
                   ref={googleLoginRef}
                   style={{ 
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0.01, // Almost invisible but still clickable
-                    pointerEvents: 'auto',
-                    zIndex: 1,
-                    overflow: 'visible'
+                    inset: 0,
+                    opacity: 0.01,
+                    zIndex: 1
                   }}
                 >
                   <GoogleLogin
                     onSuccess={handleGoogleLogin}
                     onError={handleGoogleError}
-                    theme="outline"
-                    size="large"
                     text="signin_with"
-                    shape="rectangular"
                     width="100%"
-                    useOneTap={false}
                   />
                 </div>
                 {/* Custom styled overlay - visual only, clicks pass through */}
@@ -348,8 +500,7 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
                   style={{ 
                     position: 'relative',
                     zIndex: 2,
-                    width: '100%',
-                    pointerEvents: 'none', // Clicks pass through to GoogleLogin below
+                    pointerEvents: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -368,8 +519,8 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
                   <span>Sign In With Google</span>
                 </div>
               </div>
-            )}
-          </GoogleOAuthProvider>
+            </GoogleOAuthProvider>
+          )}
 
           {/* Sign Up */}
           <div className={styles.signUpText}>
