@@ -142,8 +142,8 @@ export default function MyAddressPage() {
             });
         }
 
-        // Navigate back to the page that opened this (home or cart)
-        navigate(returnPath, { replace: true });
+        // Navigate to cart page when address is selected
+        navigate('/cart', { replace: true });
     };
 
     const handleAddNewAddress = () => {

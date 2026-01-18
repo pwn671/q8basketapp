@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import styles from "./AddAddress.module.css";
-import { addressJSON } from "../../data/staticData";
 import { useNavigate } from "react-router-dom";
 export default function AddAddress({ show, onClose, onApply }) {
     const [selected, setSelected] = useState();

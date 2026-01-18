@@ -135,7 +135,6 @@ export default function ProductDetail() {
         {/* Product Details */}
         <div className={styles.details}>
           <h2 className={styles.title}>{product.title}</h2>
-          <p className={styles.offer}>Free Coriander above {formatCurrency(500)}</p>
           <p className={styles.stock}>
             In Stock: {product.stock > 0 ? product.stock : "Out of stock"}
           </p>
