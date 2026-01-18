@@ -15,50 +15,19 @@ import { Capacitor } from '@capacitor/core';
 import './assets/styles/styles.css';
 
 // Initialize Google Auth ONLY for mobile platforms
-if (Capacitor.isNativePlatform()) {
-  console.log('========================================');
-  console.log('🚀 [INIT] Initializing Google Auth for mobile...');
-  console.log('========================================');
-  
+if (Capacitor.isNativePlatform()) {  
   const webClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
-  if (!webClientId) {
-    console.error('❌ [INIT] VITE_GOOGLE_CLIENT_ID is not set! Google Sign-In will not work.');
-  } else {
-    console.log('✅ [INIT] Web Client ID found:', webClientId.substring(0, 30) + '...');
-    console.log('📋 [INIT] Full Web Client ID length:', webClientId.length);
-  }
-  
-  console.log('📋 [INIT] Environment check:', {
-    hasWebClientId: !!webClientId,
-    hasMobileClientId: !!import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE,
-    platform: Capacitor.getPlatform()
-  });
-  
   try {
-    console.log('🔄 [INIT] Calling GoogleAuth.initialize()...');
     GoogleAuth.initialize({
       clientId: webClientId,  // ✅ Use Web Client ID (required by plugin)
       scopes: ['profile', 'email'],
       grantOfflineAccess: true,
     });
-    console.log('✅ [INIT] GoogleAuth.initialize() completed successfully');
-    console.log('📋 [INIT] Configuration:', {
-      clientId: webClientId.substring(0, 30) + '...',
-      scopes: ['profile', 'email'],
-      grantOfflineAccess: true
-    });
   } catch (initError) {
     console.error('❌ [INIT] Failed to initialize GoogleAuth:', initError);
-    console.error('❌ [INIT] Error details:', {
-      message: initError?.message,
-      stack: initError?.stack,
-      name: initError?.name,
-      code: initError?.code
-    });
   }
   
-  console.log('========================================');
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
