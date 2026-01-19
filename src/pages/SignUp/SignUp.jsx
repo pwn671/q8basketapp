@@ -188,11 +188,25 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
   // ✅ Redirect on successful login
   useEffect(() => {
     if (user && token && !loading) {
+      // Check if phone number is missing
+      const needsProfileCompletion = localStorage.getItem('needsProfileCompletion') === 'true';
+      const missingFields = JSON.parse(localStorage.getItem('missingFields') || '[]');
+      const isPhoneMissing = !user.phone || user.phone === null || user.phone === '' || missingFields.includes('phone');
+      
       // Set flag to show offer popup after login
       localStorage.setItem('justLoggedIn', 'true');
-      toast.success("Signup successful! Redirecting...");
-      const timer = setTimeout(() => navigate("/home"), 1500);
-      return () => clearTimeout(timer);
+      
+      if (needsProfileCompletion && isPhoneMissing) {
+        // Redirect to edit-profile if phone is missing
+        toast.info("Please update your phone number to continue");
+        const timer = setTimeout(() => navigate("/edit-profile"), 1500);
+        return () => clearTimeout(timer);
+      } else {
+        // Normal redirect to home
+        toast.success("Signup successful! Redirecting...");
+        const timer = setTimeout(() => navigate("/home"), 1500);
+        return () => clearTimeout(timer);
+      }
     }
   }, [user, token, loading, navigate]);
 

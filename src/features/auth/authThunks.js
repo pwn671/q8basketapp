@@ -58,6 +58,17 @@ export const loginUser = createAsyncThunk(
 
             const data = await parseApiResponse(response);
 
+            // Store profile completion info if needed (same as Google login)
+            if (data.data && data.data.needs_profile_completion) {
+                localStorage.setItem('needsProfileCompletion', 'true');
+                if (data.data.missing && Array.isArray(data.data.missing)) {
+                    localStorage.setItem('missingFields', JSON.stringify(data.data.missing));
+                }
+            } else {
+                localStorage.removeItem('needsProfileCompletion');
+                localStorage.removeItem('missingFields');
+            }
+
             // Return complete user data structure
             return {
                 user: data.data.user || data.data,
