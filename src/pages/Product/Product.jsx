@@ -105,9 +105,13 @@ export default function ProductPage() {
     }
   }, [categoryId, categories]);
 
-  // Reset offset when category changes
+  // Reset offset and clear products when category changes
   useEffect(() => {
     setOffset(0);
+    // Clear products immediately when category changes to prevent showing old products
+    setProducts([]);
+    setOriginalProducts([]);
+    setTotalCount(0);
   }, [categoryId]);
 
   // Fetch products based on category, sort, and pagination
