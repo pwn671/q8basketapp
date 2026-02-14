@@ -18,11 +18,14 @@ import config from '../../config/env';
 
 export default function SignUp({ onSignIn, onRegistrationSuccess }) {
   const isMobileApp = Capacitor.isNativePlatform();
-  
-  // Use different client IDs for web and mobile
-  const GOOGLE_CLIENT_ID = isMobileApp 
-    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID)
-    : import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const isIOS = Capacitor.getPlatform() === 'ios';
+
+  // Use different client IDs for web, Android, and iOS (matches GoogleService-Info.plist on iOS)
+  const GOOGLE_CLIENT_ID = isIOS
+    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS || import.meta.env.VITE_GOOGLE_CLIENT_ID)
+    : isMobileApp
+      ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE || import.meta.env.VITE_GOOGLE_CLIENT_ID)
+      : import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   const [fullName, setFullName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -380,6 +383,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
     });
     console.log('Client ID configuration:', {
       GOOGLE_CLIENT_ID,
+      env_ios: import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS,
       env_mobile: import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE,
       env_web: import.meta.env.VITE_GOOGLE_CLIENT_ID
     });
