@@ -45,8 +45,26 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Q8Basket needs camera access to take photos of products.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Q8Basket needs access to your photo library to let you choose or save product images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Q8Basket needs permission to save photos to your library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Q8Basket uses your location to show nearby stores and delivery options.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Q8Basket needs microphone access when recording video for product photos.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.q8basket.marketplace</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>OAuth callback</string>
+		</dict>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>

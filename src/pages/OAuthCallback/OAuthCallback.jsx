@@ -39,10 +39,11 @@ export default function OAuthCallback() {
     const isMobileApp = Capacitor.isNativePlatform();
 
     if (isMobileApp) {
-      // Redirect back to app using deep link
+      // Redirect back to app using deep link (iOS: com.q8basket.marketplace, Android: com.q8basket.app)
+      const scheme = Capacitor.getPlatform() === 'ios' ? 'com.q8basket.marketplace' : 'com.q8basket.app';
       const deepLink = error
-        ? `com.q8basket.app://oauth?error=${encodeURIComponent(error)}`
-        : `com.q8basket.app://oauth?token=${encodeURIComponent(token)}`;
+        ? `${scheme}://oauth?error=${encodeURIComponent(error)}`
+        : `${scheme}://oauth?token=${encodeURIComponent(token)}`;
       
       window.location.href = deepLink;
     } else {

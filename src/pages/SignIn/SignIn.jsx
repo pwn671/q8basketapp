@@ -344,16 +344,23 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
       
       // Error code 10 is DEVELOPER_ERROR - provide specific guidance
       if (err.code === '10' || err.code === 10) {
+        const isIOS = Capacitor.getPlatform() === 'ios';
+        const idHint = isIOS ? 'Bundle ID (should be: com.q8basket.marketplace)' : 'Package name (should be: com.q8basket.app)';
         console.error('🔴 [GOOGLE LOGIN] Error Code 10 (DEVELOPER_ERROR) detected!');
         console.error('🔴 [GOOGLE LOGIN] This usually means:');
-        console.error('   1. SHA-1 fingerprint mismatch in Google Cloud Console');
-        console.error('   2. Package name mismatch (should be: com.q8basket.app)');
-        console.error('   3. Android OAuth Client ID not properly configured');
+        console.error('   1. SHA-1 fingerprint mismatch in Google Cloud Console (Android)');
+        console.error(`   2. ${idHint}`);
+        console.error('   3. OAuth Client ID not properly configured for this platform');
         console.error('🔴 [GOOGLE LOGIN] To fix:');
-        console.error('   1. Run: cd android && ./gradlew signingReport');
-        console.error('   2. Copy the SHA-1 from "Variant: debug" → "SHA1:"');
-        console.error('   3. Add it to Google Cloud Console → APIs & Services → Credentials');
-        console.error('   4. Verify package name is exactly: com.q8basket.app');
+        if (isIOS) {
+          console.error('   1. Create an iOS OAuth client in Google Cloud with bundle ID com.q8basket.marketplace');
+          console.error('   2. Update .env VITE_GOOGLE_CLIENT_ID_IOS and GoogleService-Info.plist');
+        } else {
+          console.error('   1. Run: cd android && ./gradlew signingReport');
+          console.error('   2. Copy the SHA-1 from "Variant: debug" → "SHA1:"');
+          console.error('   3. Add it to Google Cloud Console → APIs & Services → Credentials');
+          console.error('   4. Verify package name is exactly: com.q8basket.app');
+        }
         console.error('   5. Rebuild and reinstall the app');
       }
       
