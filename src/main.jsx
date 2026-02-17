@@ -15,19 +15,23 @@ import { Capacitor } from '@capacitor/core';
 import './assets/styles/styles.css';
 
 // Initialize Google Auth ONLY for mobile platforms
-if (Capacitor.isNativePlatform()) {  
-  const webClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  
+// Android: uses web client (from strings.xml server_client_id) - requestIdToken(webClientId) works
+// iOS: must use iOS client (from GoogleService-Info.plist) - GIDConfiguration requires it for sign-in
+if (Capacitor.isNativePlatform()) {
+  const platform = Capacitor.getPlatform();
+  const clientId = platform === 'ios'
+    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS || import.meta.env.VITE_GOOGLE_CLIENT_ID)
+    : (import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE);
+
   try {
     GoogleAuth.initialize({
-      clientId: webClientId,  // ✅ Use Web Client ID (required by plugin)
+      clientId,
       scopes: ['profile', 'email'],
       grantOfflineAccess: true,
     });
   } catch (initError) {
     console.error('❌ [INIT] Failed to initialize GoogleAuth:', initError);
   }
-  
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

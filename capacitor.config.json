@@ -36,7 +36,8 @@
         "email"
       ],
       "serverClientId": "948766176517-cg6a06l9u1i161uiiabocrj8538vp3tr.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
+      "forceCodeForRefreshToken": true,
+      "iosClientId": "948766176517-i82ogsealg1i1ugsddi51vpflnc5d9vf.apps.googleusercontent.com"
     }
   },
   "ios": {
