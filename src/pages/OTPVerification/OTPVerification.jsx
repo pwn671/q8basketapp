@@ -96,7 +96,7 @@ export default function OTPVerification({ onVerify }) {
     <div
       className={styles.root}
       style={{
-        backgroundImage: `url(${BASE_URL}api/image/o/assets/images/app/otp-verification-bg.png)`,
+        backgroundImage: `url(${BASE_URL}/api/image/o/assets/images/app/otp-verification-bg.png)`,
       }}
     >
       <form className={styles.card} onSubmit={(e) => e.preventDefault()}>
