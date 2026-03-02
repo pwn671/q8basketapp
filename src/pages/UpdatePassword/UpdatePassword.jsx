@@ -6,6 +6,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePasswordReset } from '../../context/PasswordResetContext';
 import { useNavigate } from "react-router-dom";
+import config from '../../config/env.js';
 
 export default function UpdatePassword({ onNext }) {
   const [newPassword, setNewPasswordInput] = useState('');
@@ -31,8 +32,8 @@ export default function UpdatePassword({ onNext }) {
     otp,
   } = usePasswordReset(); // ✅ pull required values
 
-  const BASE_URL = import.meta.env.VITE_APP_URL;
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BASE_URL = config.APP_URL;
+  const BACKEND_URL = config.BACKEND_URL;
 
 
   useEffect(() => {

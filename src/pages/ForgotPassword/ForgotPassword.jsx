@@ -12,7 +12,7 @@ export default function ForgetPassword({ onOtpSent }) {
 const { setResetEmail, setOtp } = usePasswordReset();
   const dispatch = useDispatch();
   const { loading, error, forgotStatus } = useSelector((state) => state.auth);
-  const BASE_URL = import.meta.env.VITE_APP_URL;
+  const BASE_URL = import.meta.env.VITE_APP_URL_PROD;
 
   useEffect(() => {
     dispatch(resetAuthState());
@@ -63,7 +63,7 @@ const { setResetEmail, setOtp } = usePasswordReset();
     <div
       className={styles.root}
       style={{
-        backgroundImage: `url(${BASE_URL}api/image/o/assets/images/app/forgot-password-bg.png)`,
+        backgroundImage: `url(${BASE_URL}/api/image/o/assets/images/app/forgot-password-bg.png)`,
       }}
       aria-label="Forget Password Screen"
     >

@@ -3,16 +3,18 @@ import styles from './OTPVerification.module.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
+import config from '../../config/env.js';
 
 export default function OTPVerification({ onVerify }) {
   const [otpArray, setOtpArray] = useState(['', '', '', '']);
   const otpRefs = useRef([]);
   const [timer, setTimer] = useState(10);
   const [resending, setResending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
-  const { otp: debugOtp, resetEmail, setOtp } = usePasswordReset();
-  const BASE_URL = import.meta.env.VITE_APP_URL;
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const { resetEmail, setOtp } = usePasswordReset();
+  const BASE_URL = config.APP_URL;
+  const BACKEND_URL = config.BACKEND_URL;
 
   // Countdown logic
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function OTPVerification({ onVerify }) {
     if (value && index < 3) otpRefs.current[index + 1]?.focus();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const enteredOtp = otpArray.join('');
     if (enteredOtp.length !== 4) {
       toast.error('Enter a valid 4-digit OTP');
@@ -40,13 +42,27 @@ export default function OTPVerification({ onVerify }) {
       toast.error('Email missing. Start over.');
       return;
     }
-    if (enteredOtp !== debugOtp) {
-      toast.error('Invalid OTP. Please try again.');
-      return;
+    setVerifying(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/user/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, otp: enteredOtp }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || data.status !== true) {
+        throw new Error(data?.data?.message || data?.message || 'Invalid OTP. Please try again.');
+      }
+
+      setOtp(enteredOtp);
+      toast.success(data?.data?.message || data?.message || 'OTP Verified!');
+      setTimeout(() => onVerify(), 1000);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setVerifying(false);
     }
-    setOtp(enteredOtp);
-    toast.success('OTP Verified!');
-    setTimeout(() => onVerify(), 1000); // Go to next screen
   };
 
   const handleResend = async () => {
@@ -116,8 +132,9 @@ export default function OTPVerification({ onVerify }) {
           type="button"
           className={styles.verifyButton}
           onClick={handleSubmit}
+          disabled={verifying}
         >
-          Verify
+          {verifying ? 'Verifying...' : 'Verify'}
         </button>
       </form>
       
