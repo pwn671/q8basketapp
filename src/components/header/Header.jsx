@@ -3,9 +3,11 @@ import React from "react";
 import styles from "./Header.module.css";
 import SearchBar from "../searchbar/SearchBar";
 import { useNavigate } from "react-router-dom";
+import config from "../../config/env";
 
 export default function Header({ location, search, setSearch }) {
     const navigate = useNavigate();
+    const BASE_URL = config.BACKEND_URL;
 
     const handleArrowClick = () => {
         navigate("/my-address", { state: { from: "/home" } });
@@ -13,7 +15,12 @@ export default function Header({ location, search, setSearch }) {
 
     return (
         <header className={styles.homeHeader}>
-            <h1 tabIndex={0}>Q8 Basket</h1>
+            <img
+                src={`${BASE_URL}/image/o/assets/images/app/logo-vertical.png`}
+                alt="Q8 Basket"
+                className={styles.headerLogo}
+                tabIndex={0}
+            />
 
             {/* Location Info */}
             <div className={styles.locationWrapper} onClick={handleArrowClick}>

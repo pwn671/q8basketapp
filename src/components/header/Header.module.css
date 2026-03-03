@@ -15,12 +15,21 @@
   z-index: 100;
 }
 
-.homeHeader h1 {
+.homeHeader h1,
+.homeHeader .headerLogo {
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   color: #1a1a1a;
-  padding: 0px 10px 0px 10px;
+  align-self: flex-start;
+  padding: 0 0 4px 12px;
+}
+
+.headerLogo {
+  display: block;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
 }
 
 .locationWrapper {
