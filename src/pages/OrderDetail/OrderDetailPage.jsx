@@ -175,7 +175,7 @@ export default function OrderDetailPage() {
   return (
     <div className={layoutStyles.appWrapper}>
       <div className={layoutStyles.appContainer}>
-        <SimpleHeader title="Order Details" fallbackRoute="/orders" />
+        <SimpleHeader title="Order Details" fallbackRoute={returnPath} />
         
         <div className={styles.content}>
           {/* Order Info Header */}

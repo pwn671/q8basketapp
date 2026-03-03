@@ -23,6 +23,39 @@ export const useSmartBack = (fallbackRoute = '/home') => {
     const currentPath = location.pathname;
     const state = location.state;
 
+    // Handle order flow FIRST so we use history back and avoid push/replace loops.
+    // Order detail: always go back in history (pop) so we land on the real orders list.
+    if (currentPath.includes('/order/') && currentPath.includes('/details')) {
+      if (window.history.length > 2) {
+        navigate(-1);
+        return;
+      }
+      navigate(state?.from || '/orders', { replace: true });
+      return;
+    }
+
+    // Orders list: if we have explicit state use it; otherwise use history back so we don't loop.
+    if (currentPath === '/orders') {
+      if (state?.from) {
+        if (state?.preventLoop) {
+          navigate(fallbackRoute, { replace: true });
+          return;
+        }
+        if (state?.originalSource) {
+          navigate(state.originalSource, { replace: true });
+          return;
+        }
+        navigate(state.from, { replace: true });
+        return;
+      }
+      if (window.history.length > 2) {
+        navigate(-1);
+        return;
+      }
+      navigate(fallbackRoute);
+      return;
+    }
+
     // If we have state with a from route, use it (but check if it's valid)
     if (state?.from) {
       const fromRoute = state.from;
@@ -40,61 +73,12 @@ export const useSmartBack = (fallbackRoute = '/home') => {
       }
       
       // When navigating back, pass state indicating where we came from
-      // This helps prevent navigation loops (e.g., Profile <-> My Address)
       navigate(fromRoute, { 
         state: { 
           from: currentPath,
           preventLoop: true 
         } 
       });
-      return;
-    }
-
-    // Special handling for order detail pages
-    if (currentPath.includes('/order/') && currentPath.includes('/details')) {
-      // Check if we have state indicating where we came from
-      if (state?.from) {
-        // Navigate back to where we came from (usually /orders)
-        navigate(state.from, { replace: true });
-        return;
-      }
-      // Default: go to orders list
-      navigate('/orders', { replace: true });
-      return;
-    }
-
-    // Special handling for orders list page
-    if (currentPath === '/orders') {
-      // Check if we have state indicating where we came from
-      if (state?.from) {
-        // If preventLoop flag is set, go to fallback (usually /home)
-        if (state?.preventLoop) {
-          navigate(fallbackRoute, { replace: true });
-          return;
-        }
-        // Check if we came from a child page (order details)
-        // In this case, we should go back to the original source
-        if (state?.originalSource) {
-          navigate(state.originalSource, { replace: true });
-          return;
-        }
-        // Otherwise navigate to where we came from
-        navigate(state.from, { replace: true });
-        return;
-      }
-      
-      // If cart has items, could go to cart, otherwise go to home
-      if (itemsCount > 0) {
-        // Check if we came from cart (likely after placing order)
-        if (window.history.length > 2) {
-          navigate(-1);
-        } else {
-          navigate('/home');
-        }
-      } else {
-        // Cart is empty, go to home
-        navigate('/home');
-      }
       return;
     }
 

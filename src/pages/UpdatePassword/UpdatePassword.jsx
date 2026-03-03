@@ -101,7 +101,7 @@ export default function UpdatePassword({ onNext }) {
   return (
     <div
       className={styles.root}
-      style={{ backgroundImage: `url(${BASE_URL}api/image/o/assets/images/app/login-bg.png)` }}
+      style={{ backgroundImage: `url(${BASE_URL}/api/image/o/assets/images/app/login-bg.png)` }}
     >
       <form className={styles.card} onSubmit={onSubmit} noValidate>
         <h1 className={styles.heading}>Update Password</h1>
