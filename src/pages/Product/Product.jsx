@@ -112,6 +112,8 @@ export default function ProductPage() {
     setProducts([]);
     setOriginalProducts([]);
     setTotalCount(0);
+    // Modal filters are scoped to the current list; clear when URL category changes
+    setActiveFilters([]);
   }, [categoryId]);
 
   // Fetch products based on category, sort, and pagination
@@ -138,10 +140,18 @@ export default function ProductPage() {
           }
           // "relevance" or default: no sort/highlight parameter
 
+          // Modal filters take precedence; otherwise use sidebar/URL category (infinite scroll must match)
+          const categoryIdsForApi =
+            activeFilters.length > 0
+              ? activeFilters
+              : categoryId
+                ? [categoryId]
+                : null;
+
           // Build URL with all parameters
           const url = buildProductsUrl(
             BASE_URL,
-            categoryId ? [categoryId] : null,
+            categoryIdsForApi,
             sortParam,
             highlightParam,
             limit,
@@ -189,11 +199,12 @@ export default function ProductPage() {
     };
 
     fetchProducts();
-  }, [categoryId, sortOption, limit, offset]);
+  }, [categoryId, sortOption, limit, offset, activeFilters, BASE_URL]);
 
   // Handle sidebar category selection
   const handleCategorySelect = (index) => {
     setActiveCategoryIndex(index);
+    setActiveFilters([]);
 
     if (index === 0) {
       // "All" selected - remove category from URL
@@ -239,51 +250,10 @@ export default function ProductPage() {
     navigate(`/products/${id}`);
   };
 
-  // Filter logic - now using category IDs from API
-  const handleFilter = async (selectedCategoryIds) => {
+  // Filter logic — state update triggers the main fetch effect (same code path as scroll / sort)
+  const handleFilter = (selectedCategoryIds) => {
     setActiveFilters(selectedCategoryIds);
-    setOffset(0); // Reset pagination when filtering
-
-    // Map sort option to API parameters
-    let sortParam = null;
-    let highlightParam = null;
-
-    if (sortOption === "lowToHigh") {
-      sortParam = "low-high";
-    } else if (sortOption === "highToLow") {
-      sortParam = "high-low";
-    } else if (sortOption === "newest") {
-      highlightParam = "latest";
-    }
-
-    setLoading(true);
-    const result = await safeApiCall(
-      async () => {
-        // Build URL with all parameters
-        const url = buildProductsUrl(
-          BASE_URL,
-          selectedCategoryIds.length > 0 ? selectedCategoryIds : null,
-          sortParam,
-          highlightParam,
-          limit,
-          0 // Reset offset when filtering
-        );
-        
-        const response = await fetch(url);
-        const data = await parseApiResponse(response);
-        if (data.status && Array.isArray(data.data.data)) {
-          // totalCount is at root level, products are at data.data
-          const total = data.totalCount || 0;
-          setTotalCount(total);
-          return { products: data.data.data, totalCount: total };
-        }
-        return { products: [], totalCount: 0 };
-      },
-      { showErrorToast: false, customErrorMessage: 'Failed to filter products', fallbackValue: { products: [], totalCount: 0 } }
-    );
-    setProducts(result?.products || []);
-    setOriginalProducts(result?.products || []);
-    setLoading(false);
+    setOffset(0);
   };
 
   // Handle sort change - triggers new API call
@@ -514,6 +484,7 @@ export default function ProductPage() {
               show={showFilter}
               onClose={() => setShowFilter(false)}
               filters={categories}
+              appliedIds={activeFilters}
               onApply={handleFilter}
             />
 

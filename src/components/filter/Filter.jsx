@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./Filter.module.css";
 import SearchBar from "../searchbar/SearchBar";
 
-export default function Filter({ show, onClose, onApply, filters }) {
+export default function Filter({ show, onClose, onApply, filters, appliedIds = [] }) {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (show) {
+      setSelected(Array.isArray(appliedIds) ? [...appliedIds] : []);
+    }
+  }, [show, appliedIds]);
 
   if (!show) return null;
 
