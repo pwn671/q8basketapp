@@ -6,13 +6,14 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './ForgotPassword.module.css';
 import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
+import config from '../../config/env';
 
 export default function ForgetPassword({ onOtpSent }) {
   const [email, setEmail] = useState('');
 const { setResetEmail, setOtp } = usePasswordReset();
   const dispatch = useDispatch();
   const { loading, error, forgotStatus } = useSelector((state) => state.auth);
-  const BASE_URL = import.meta.env.VITE_APP_URL_PROD;
+  const BASE_URL = config.APP_URL;
 
   useEffect(() => {
     dispatch(resetAuthState());

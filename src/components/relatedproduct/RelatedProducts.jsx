@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./RelatedProducts.module.css";
 import { useCart } from "../../context/CartContext";
 import { formatCurrency } from "../../config/currency";
+import ProductImage from "../productimage/ProductImage";
 
 export default function RelatedProducts({ products }) {
   const { state, dispatch } = useCart();
@@ -43,7 +44,7 @@ export default function RelatedProducts({ products }) {
           return (
             <div key={item.id} className={styles.card}>
               <div className={styles.cardImg}>
-                <img src={item.thumbnail} alt={item.title} />
+                <ProductImage src={item.thumbnail} alt={item.title} />
                 {qty > 0 ? (
                   <div className={styles.qtyControlsCard}>
                     <button onClick={() => handleDecrement(item.id)}>-</button>

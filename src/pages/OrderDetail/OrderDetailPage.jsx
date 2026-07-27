@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProductImage from "../../components/productimage/ProductImage";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -202,7 +203,7 @@ export default function OrderDetailPage() {
                   <article key={item.id} className={styles.orderItem}>
                     {/* Left: Image */}
                     <div className={styles.itemInfo}>
-                      <img
+                      <ProductImage
                         src={item.photo}
                         alt={item.name}
                         className={styles.itemImg}

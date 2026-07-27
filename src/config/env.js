@@ -1,30 +1,15 @@
-// Environment configuration with automatic dev/prod switching
+// All application API requests are derived from this single environment value.
 const environment = import.meta.env.VITE_ENVIRONMENT || 'development';
 const isProduction = environment === 'production';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
 
-// Helper function to get environment-specific URL
-const getEnvUrl = (devKey, prodKey, fallback) => {
-  // Get the base key name (without _DEV or _PROD)
-  const baseKey = devKey.replace('_DEV', '').replace('_PROD', '');
-  
-  // Check if explicitly set (manual override) - but only if it's not empty
-  const explicit = import.meta.env[baseKey];
-  if (explicit && explicit.trim() !== '') {
-    return explicit;
-  }
-  
-  // Then check environment-specific URLs based on current environment
-  if (isProduction) {
-    return import.meta.env[prodKey] || import.meta.env[devKey] || fallback;
-  } else {
-    return import.meta.env[devKey] || fallback;
-  }
-};
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL must be defined in .env');
+}
 
-// Get URLs based on environment
-const APP_URL = getEnvUrl('VITE_APP_URL_DEV', 'VITE_APP_URL_PROD', 'https://demo.q8basket.com');
-const API_BASE_URL = getEnvUrl('VITE_API_BASE_URL_DEV', 'VITE_API_BASE_URL_PROD', 'https://demo.q8basket.com/api');
-const BACKEND_URL = getEnvUrl('VITE_BACKEND_URL_DEV', 'VITE_BACKEND_URL_PROD', 'https://demo.q8basket.com/api');
+// API_BASE_URL includes `/api`; derive the web-app origin for redirects and assets.
+const APP_URL = new URL(API_BASE_URL).origin;
+const BACKEND_URL = API_BASE_URL;
 
 const config = {
   // App URL (base URL for the app)
@@ -37,12 +22,12 @@ const config = {
   BACKEND_URL: BACKEND_URL,
   
   // External Services
-  OPENSTREETMAP_NOMINATIM_URL: import.meta.env.VITE_OPENSTREETMAP_NOMINATIM_URL || 'https://nominatim.openstreetmap.org',
-  OPENSTREETMAP_TILES_URL: import.meta.env.VITE_OPENSTREETMAP_TILES_URL || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  OPENSTREETMAP_NOMINATIM_URL: import.meta.env.VITE_OPENSTREETMAP_NOMINATIM_URL,
+  OPENSTREETMAP_TILES_URL: import.meta.env.VITE_OPENSTREETMAP_TILES_URL,
   
   // CDN URLs
-  UNSPLASH_CDN_URL: import.meta.env.VITE_UNSPLASH_CDN_URL || 'https://images.unsplash.com',
-  FLATICON_CDN_URL: import.meta.env.VITE_FLATICON_CDN_URL || 'https://cdn-icons-png.flaticon.com',
+  UNSPLASH_CDN_URL: import.meta.env.VITE_UNSPLASH_CDN_URL,
+  FLATICON_CDN_URL: import.meta.env.VITE_FLATICON_CDN_URL,
   
   // Environment
   ENVIRONMENT: environment,

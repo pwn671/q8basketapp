@@ -7,6 +7,7 @@ import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
 import { useDispatch } from 'react-redux';
 import { loginUser } from '../../features/auth/authThunks';
 import { safeApiCall, parseApiResponse, handleApiError } from '../../utils/errorHandler';
+import config from '../../config/env';
 
 export default function OTPVerification() {
   const [otpArray, setOtpArray] = useState(['', '', '', '']);
@@ -20,8 +21,8 @@ export default function OTPVerification() {
 
   const resetEmail = contextEmail;
 
-  const BASE_URL = import.meta.env.VITE_APP_URL;
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BASE_URL = config.APP_URL;
+  const BACKEND_URL = config.BACKEND_URL;
 
   useEffect(() => {
     if (timer === 0) return;

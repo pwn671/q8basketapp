@@ -75,7 +75,8 @@
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-start;
-    justify-content: center;
+    /* justify-content: center; */
+        justify-content: flex-start;
     gap: 6px;
     cursor: pointer;
     color: #666;
@@ -632,3 +633,13 @@ button {
     opacity: 0.6;
 }
 
+.itemImgWrapper{
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}

@@ -1,8 +1,36 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const apiBaseUrl = env.VITE_API_BASE_URL;
+
+  if (!apiBaseUrl) {
+    throw new Error('VITE_API_BASE_URL must be defined in .env');
+  }
+
+  const apiOrigin = new URL(apiBaseUrl).origin;
+
+  return {
+  server: {
+    proxy: {
+      '/api': {
+        target: apiOrigin,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/api': {
+        target: apiOrigin,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -150,4 +178,5 @@ export default defineConfig({
     }),
   ],
   base: './', // Important for Capacitor
+  };
 });

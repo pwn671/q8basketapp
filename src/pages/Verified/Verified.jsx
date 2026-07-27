@@ -1,9 +1,10 @@
 import React from 'react';
 import { useNavigate } from "react-router-dom";
 import styles from './Verified.module.css'; // Make sure this CSS file exists
+import config from '../../config/env';
 
 export default function Verification() {
-  const BASE_URL = import.meta.env.VITE_APP_URL;
+  const BASE_URL = config.APP_URL;
   const navigate = useNavigate();
 
   const handleVerifiedClick = () => {

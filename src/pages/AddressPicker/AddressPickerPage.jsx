@@ -137,7 +137,7 @@ export default function AddressPickerPage({ show, onClose, onSave }) {
                             }}
                         >
                             <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                url={config.OPENSTREETMAP_TILES_URL}
                                 attribution="&copy; OpenStreetMap contributors"
                             />
                             <Marker

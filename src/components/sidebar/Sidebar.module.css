@@ -2,7 +2,7 @@
   width: 75px;
   flex: 0 0 auto;        /* Prevent resizing horizontally */
   min-height: 0;         /* Crucial: allow flex shrinking */
-  height: 100%;          /* Use 100% of parent container, not viewport */
+  /*height: 100%;/*          /* Use 100% of parent container, not viewport */
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;    /* Ensure proper positioning */
@@ -10,6 +10,14 @@
   /* Scrollbar styles (Firefox) */
   scrollbar-width: thin;
   scrollbar-color: #a21429 transparent;
+    /* Replace your current height */
+  height: calc(100dvh - 120px);
+
+  /* Replace your current padding-bottom */
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+ 
+  box-sizing: border-box;
+  
 }
 
 /* Chrome, Edge, Safari */
