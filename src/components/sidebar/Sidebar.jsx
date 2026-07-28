@@ -1,7 +1,11 @@
 import React from "react";
 import styles from "./Sidebar.module.css";
 
-export default function Sidebar({ activeCategoryIndex, setActiveCategoryIndex, categories = [] }) {
+export default function Sidebar({
+  activeCategoryIndex,
+  setActiveCategoryIndex,
+  categories = [],
+}) {
   return (
     <aside className={styles.sidebar}>
       <ul>
@@ -10,7 +14,7 @@ export default function Sidebar({ activeCategoryIndex, setActiveCategoryIndex, c
           className={activeCategoryIndex === 0 ? styles.active : ""}
           onClick={() => setActiveCategoryIndex(0)}
         >
-          <img src="/icons/fruit1.svg" alt="All" />
+          <img src="/icons/all.svg" alt="All" />
           All
         </li>
 
@@ -25,6 +29,7 @@ export default function Sidebar({ activeCategoryIndex, setActiveCategoryIndex, c
             {category.name}
           </li>
         ))}
+        <li></li>
       </ul>
     </aside>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import NavBar from "../../components/navbar/NavBar";
 import styles from "./Product.module.css";
-import layoutStyles from '../../styles/Layout.module.css';
+import layoutStyles from "../../styles/Layout.module.css";
 import Sidebar from "../../components/sidebar/Sidebar";
 import ViewCart from "../../components/cart/ViewCart";
 import Filter from "../../components/filter/Filter";
@@ -10,19 +10,29 @@ import Sort from "../../components/sort/Sort";
 import SearchHeader from "../../components/searchHeader/SearchHeader";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../hooks/useAuth";
-import { SortOptions } from '../../data/staticData';
+import { SortOptions } from "../../data/staticData";
 import config from "../../config/env";
 import { safeApiCall, parseApiResponse } from "../../utils/errorHandler";
 import { formatCurrency } from "../../config/currency";
-import useLockBodyScrollOnApp from '../../hooks/useLockBodyScrollOnApp';
+import useLockBodyScrollOnApp from "../../hooks/useLockBodyScrollOnApp";
+import ProductImage from "../../components/productimage/ProductImage";
 
 // Helper function to build API URL with all parameters
-const buildProductsUrl = (baseUrl, categoryIds = null, sort = null, highlight = null, limit = 20, offset = 0) => {
+const buildProductsUrl = (
+  baseUrl,
+  categoryIds = null,
+  sort = null,
+  highlight = null,
+  limit = 20,
+  offset = 0,
+) => {
   let url = `${baseUrl}/front/products`;
   const params = [];
 
   if (categoryIds && categoryIds.length > 0) {
-    params.push(`category_ids=${Array.isArray(categoryIds) ? categoryIds.join(',') : categoryIds}`);
+    params.push(
+      `category_ids=${Array.isArray(categoryIds) ? categoryIds.join(",") : categoryIds}`,
+    );
   }
 
   if (sort) {
@@ -37,7 +47,7 @@ const buildProductsUrl = (baseUrl, categoryIds = null, sort = null, highlight = 
   params.push(`offset=${offset}`);
 
   if (params.length > 0) {
-    url += `?${params.join('&')}`;
+    url += `?${params.join("&")}`;
   }
 
   return url;
@@ -93,7 +103,9 @@ export default function ProductPage() {
     if (categories.length > 0) {
       if (categoryId) {
         // Find the index of the category with the given ID
-        const categoryIndex = categories.findIndex(cat => cat.id.toString() === categoryId.toString());
+        const categoryIndex = categories.findIndex(
+          (cat) => cat.id.toString() === categoryId.toString(),
+        );
         if (categoryIndex !== -1) {
           setActiveCategoryIndex(categoryIndex + 1); // +1 because index 0 is "All"
         } else {
@@ -155,11 +167,11 @@ export default function ProductPage() {
             sortParam,
             highlightParam,
             limit,
-            offset
+            offset,
           );
-          
-          console.log('Fetching products:', url);
-          
+
+          console.log("Fetching products:", url);
+
           const response = await fetch(url);
           const data = await parseApiResponse(response);
 
@@ -167,7 +179,9 @@ export default function ProductPage() {
             // totalCount is at root level, products are at data.data
             const total = data.totalCount || 0;
             setTotalCount(total);
-            console.log(`Loaded ${data.data.data.length} products, total: ${total}, offset: ${offset}`);
+            console.log(
+              `Loaded ${data.data.data.length} products, total: ${total}, offset: ${offset}`,
+            );
             return { products: data.data.data, totalCount: total };
           } else {
             setError("No products found.");
@@ -176,9 +190,9 @@ export default function ProductPage() {
         },
         {
           showErrorToast: false, // Handle errors manually
-          customErrorMessage: 'Failed to load products',
-          fallbackValue: { products: [], totalCount: 0 }
-        }
+          customErrorMessage: "Failed to load products",
+          fallbackValue: { products: [], totalCount: 0 },
+        },
       );
 
       // If offset is 0, replace products (new category/sort/filter)
@@ -187,12 +201,12 @@ export default function ProductPage() {
         setProducts(result?.products || []);
         setOriginalProducts(result?.products || []);
       } else {
-        setProducts(prev => {
+        setProducts((prev) => {
           const newProducts = [...prev, ...(result?.products || [])];
           console.log(`Total products now: ${newProducts.length}`);
           return newProducts;
         });
-        setOriginalProducts(prev => [...prev, ...(result?.products || [])]);
+        setOriginalProducts((prev) => [...prev, ...(result?.products || [])]);
       }
       setLoading(false);
       setLoadingMore(false);
@@ -209,13 +223,15 @@ export default function ProductPage() {
     if (index === 0) {
       // "All" selected - remove category from URL
       // Use replace to avoid adding to history
-      navigate('/products', { replace: true });
+      navigate("/products", { replace: true });
     } else {
       // Specific category selected - update URL
       const selectedCategory = categories[index - 1];
       if (selectedCategory) {
         // Use replace to avoid adding to history
-        navigate(`/products?category=${selectedCategory.id}`, { replace: true });
+        navigate(`/products?category=${selectedCategory.id}`, {
+          replace: true,
+        });
       }
     }
   };
@@ -223,7 +239,7 @@ export default function ProductPage() {
   // Cart handlers (same as before)
   const handleAdd = (item) => {
     if (!isAuthenticated) {
-      navigate('/signin');
+      navigate("/signin");
       return;
     }
     dispatch({
@@ -266,7 +282,7 @@ export default function ProductPage() {
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && !loading && products.length < totalCount) {
       setLoadingMore(true);
-      setOffset(prev => prev + limit);
+      setOffset((prev) => prev + limit);
     }
   }, [loadingMore, loading, products.length, totalCount, limit]);
 
@@ -281,29 +297,33 @@ export default function ProductPage() {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         // If the trigger element is visible and we have more products to load
-        if (entries[0].isIntersecting && products.length > 0 && products.length < totalCount) {
-          console.log('Intersection triggered - loading more products', {
+        if (
+          entries[0].isIntersecting &&
+          products.length > 0 &&
+          products.length < totalCount
+        ) {
+          console.log("Intersection triggered - loading more products", {
             currentProducts: products.length,
             totalCount: totalCount,
             loadingMore: loadingMore,
-            loading: loading
+            loading: loading,
           });
           handleLoadMore();
         }
       },
       {
         root: null, // viewport
-        rootMargin: '200px', // Start loading 200px before reaching the bottom
-        threshold: 0
-      }
+        rootMargin: "200px", // Start loading 200px before reaching the bottom
+        threshold: 0,
+      },
     );
 
     // Observe the trigger element
     if (loadMoreTriggerRef.current) {
       observerRef.current.observe(loadMoreTriggerRef.current);
-      console.log('Intersection observer attached', {
+      console.log("Intersection observer attached", {
         productsLength: products.length,
-        totalCount: totalCount
+        totalCount: totalCount,
       });
     }
 
@@ -341,167 +361,211 @@ export default function ProductPage() {
     // Fallback
     return "Products";
   };
-  
+
   useLockBodyScrollOnApp();
   return (
     <div className={layoutStyles.appWrapper}>
-      <div className={`${layoutStyles.appContainer} ${styles.productPageContainer}`}>
+      <div
+        className={`${layoutStyles.appContainer} ${styles.productPageContainer}`}
+      >
         <div className={styles.productContainer}>
-        {/* Header */}
-        <SearchHeader
-          title={getPageTitle()}
-          search={search}
-          setSearch={setSearch}
-          searchActive={searchActive}
-          toggleSearch={() => setSearchActive(prev => !prev)}
-        />
-
-        <div className={styles.layout}>
-          {/* Side Navigation */}
-          <Sidebar
-            activeCategoryIndex={activeCategoryIndex}
-            setActiveCategoryIndex={handleCategorySelect} // Use the new handler
-            categories={categories} // Pass categories to sidebar
+          {/* Header */}
+          <SearchHeader
+            title={getPageTitle()}
+            search={search}
+            setSearch={setSearch}
+            searchActive={searchActive}
+            toggleSearch={() => setSearchActive((prev) => !prev)}
           />
 
-          {/* Product Section */}
-          <main className={styles.products}>
-            <div className={styles.filters}>
-              <button
-                className={styles.filterBtn}
-                onClick={() => setShowFilter(true)}
-              ><img src="/icons/filter.svg" alt="filter" className={styles.filterIcon} />
+          <div className={styles.layout}>
+            {/* Side Navigation */}
+            <Sidebar
+              activeCategoryIndex={activeCategoryIndex}
+              setActiveCategoryIndex={handleCategorySelect} // Use the new handler
+              categories={categories} // Pass categories to sidebar
+            />
 
-                Filters
-              </button>
+            {/* Product Section */}
+            <main className={styles.products}>
+              <div className={styles.filters}>
+                <button
+                  className={styles.filterBtn}
+                  onClick={() => setShowFilter(true)}
+                >
+                  <img
+                    src="/icons/filter.svg"
+                    alt="filter"
+                    className={styles.filterIcon}
+                  />
+                  Filters
+                </button>
 
-              <button onClick={() => setShowSort(true)}><img src="/icons/sort.svg" alt="sort" className={styles.sortIcon} /> Sort</button>
-            </div>
-
-            <div className={styles.grid}>
-              {products.map((p) => {
-                const qty = getQuantity(p.id);
-
-                return (
-                  <div key={p.id} className={styles.card}>
-                    <div
-                      className={styles.imageWrapper}
-                      style={{ position: "relative" }}
-                    >
-                      <img
-                        src={p.thumbnail}
-                        alt={p.title}
-                        className={styles.productImg}
-                      />
-
-                      {qty > 0 ? (
-                        <div className={styles.qtyControls}>
-                          <button onClick={() => handleDecrement(p.id)}>-</button>
-                          <span>{qty}</span>
-                          <button onClick={() => handleIncrement(p)}>+</button>
-                        </div>
-                      ) : (
-                        <button
-                          className={styles.addBtn}
-                          onClick={() => handleAdd(p)}
-                        >
-                          Add
-                        </button>
-                      )}
-                    </div>
-
-                    <div
-                      className={styles.productInfo}
-                      onClick={() => handleProductCard(p.id)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <h2 className={styles.name}>{p.title}</h2>
-
-                      {Number(p.price_sale) > Number(p.price_regular) && (
-                        <p className={styles.discount}>
-                          {Math.round(
-                            ((p.price_sale - p.price_regular) /
-                              p.price_sale) *
-                            100
-                          )}
-                          % OFF
-                        </p>
-                      )}
-
-                      <p className={styles.price}>
-                        {formatCurrency(p.price_regular)}{" "}
-                        <span className={styles.mrp}>
-                          {formatCurrency(p.price_sale)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Loading and error states */}
-            {loading && offset === 0 && (
-              <p style={{ textAlign: 'center', marginTop: '20px' }}>Loading products...</p>
-            )}
-            {error && <p style={{ color: "red", textAlign: 'center', marginTop: '20px' }}>{error}</p>}
-            {!loading && !error && products.length === 0 && (
-              <p className={styles.noResults}>
-                No products found in this category.
-              </p>
-            )}
-
-            {/* Infinite scroll trigger - element that triggers loading when visible */}
-            {!error && products.length > 0 && products.length < totalCount && (
-              <div 
-                ref={loadMoreTriggerRef}
-                style={{ 
-                  height: '40px', 
-                  margin: '20px 0',
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {loadingMore ? (
-                  <p style={{ fontSize: '14px', color: '#666' }}>Loading more products...</p>
-                ) : (
-                  <p style={{ fontSize: '12px', color: '#999' }}>Scroll for more</p>
-                )}
+                <button onClick={() => setShowSort(true)}>
+                  <img
+                    src="/icons/sort.svg"
+                    alt="sort"
+                    className={styles.sortIcon}
+                  />{" "}
+                  Sort
+                </button>
               </div>
-            )}
 
-            {/* Show total loaded message when all products are loaded */}
-            {!error && products.length > 0 && products.length >= totalCount && (
-              <p style={{ textAlign: 'center', margin: '20px 0', fontSize: '14px', color: '#666' }}>
-                All {totalCount} products loaded
-              </p>
-            )}
+              <div className={styles.grid}>
+                {products.map((p) => {
+                  const qty = getQuantity(p.id);
 
-            {/* Filter Modal */}
-            <Filter
-              show={showFilter}
-              onClose={() => setShowFilter(false)}
-              filters={categories}
-              appliedIds={activeFilters}
-              onApply={handleFilter}
-            />
+                  return (
+                    <div key={p.id} className={styles.card}>
+                      <div
+                        className={styles.imageWrapper}
+                        style={{ position: "relative" }}
+                      >
+                        <ProductImage
+                          src={p.thumbnail}
+                          alt={p.title}
+                          className={styles.productImg}
+                        />
 
-            {/* Sort Modal */}
-            <Sort
-              show={showSort}
-              onClose={() => setShowSort(false)}
-              options={SortOptions}
-              defaultValue={sortOption}
-              onApply={handleSortChange}
-            />
-          </main>
-        </div>
+                        {qty > 0 ? (
+                          <div className={styles.qtyControls}>
+                            <button onClick={() => handleDecrement(p.id)}>
+                              -
+                            </button>
+                            <span>{qty}</span>
+                            <button onClick={() => handleIncrement(p)}>
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className={styles.addBtn}
+                            onClick={() => handleAdd(p)}
+                          >
+                            Add
+                          </button>
+                        )}
+                      </div>
 
-        {/* Global Cart Preview */}
-        <ViewCart />
-        <NavBar />
+                      <div
+                        className={styles.productInfo}
+                        onClick={() => handleProductCard(p.id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <h2 className={styles.name}>{p.title}</h2>
+
+                        {Number(p.price_sale) > Number(p.price_regular) && (
+                          <p className={styles.discount}>
+                            {Math.round(
+                              ((p.price_sale - p.price_regular) /
+                                p.price_sale) *
+                                100,
+                            )}
+                            % OFF
+                          </p>
+                        )}
+
+                        <p className={styles.price}>
+                          {formatCurrency(p.price_regular)}{" "}
+                          <span className={styles.mrp}>
+                            {formatCurrency(p.price_sale)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Loading and error states */}
+              {loading && offset === 0 && (
+                <p style={{ textAlign: "center", marginTop: "20px" }}>
+                  Loading products...
+                </p>
+              )}
+              {error && (
+                <p
+                  style={{
+                    color: "red",
+                    textAlign: "center",
+                    marginTop: "20px",
+                  }}
+                >
+                  {error}
+                </p>
+              )}
+              {!loading && !error && products.length === 0 && (
+                <p className={styles.noResults}>
+                  No products found in this category.
+                </p>
+              )}
+
+              {/* Infinite scroll trigger - element that triggers loading when visible */}
+              {!error &&
+                products.length > 0 &&
+                products.length < totalCount && (
+                  <div
+                    ref={loadMoreTriggerRef}
+                    style={{
+                      height: "40px",
+                      margin: "20px 0",
+                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {loadingMore ? (
+                      <p style={{ fontSize: "14px", color: "#666" }}>
+                        Loading more products...
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: "12px", color: "#999" }}>
+                        Scroll for more
+                      </p>
+                    )}
+                  </div>
+                )}
+
+              {/* Show total loaded message when all products are loaded */}
+              {!error &&
+                products.length > 0 &&
+                products.length >= totalCount && (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      margin: "20px 0",
+                      fontSize: "14px",
+                      color: "#666",
+                    }}
+                  >
+                    All {totalCount} products loaded
+                  </p>
+                )}
+
+              {/* Filter Modal */}
+              <Filter
+                show={showFilter}
+                onClose={() => setShowFilter(false)}
+                filters={categories}
+                appliedIds={activeFilters}
+                onApply={handleFilter}
+              />
+
+              {/* Sort Modal */}
+              <Sort
+                show={showSort}
+                onClose={() => setShowSort(false)}
+                options={SortOptions}
+                defaultValue={sortOption}
+                onApply={handleSortChange}
+              />
+            </main>
+          </div>
+
+          {/* Global Cart Preview */}
+          <ViewCart />
+          <NavBar />
         </div>
       </div>
     </div>

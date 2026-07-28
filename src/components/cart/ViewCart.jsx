@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./ViewCart.module.css";
 import { useCart } from "../../hooks/useCart";
+import ProductImage from "../productimage/ProductImage";
 
 const ViewCart = () => {
   const { state, itemsCount, isAuthenticated } = useCart();
@@ -22,7 +23,7 @@ const ViewCart = () => {
       <div className={styles.imageStack}>
         {images.length > 0 ? (
           images.map((img, index) => (
-            <img
+            <ProductImage
               key={index}
               src={img}
               alt={`cart item ${index + 1}`}

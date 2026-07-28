@@ -3,6 +3,7 @@ import styles from './OTPVerification.module.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePasswordReset } from '../../context/PasswordResetContext.jsx';
+import config from '../../config/env';
 
 export default function OTPVerification({ onVerify }) {
   const [otpArray, setOtpArray] = useState(['', '', '', '']);
@@ -11,8 +12,8 @@ export default function OTPVerification({ onVerify }) {
   const [resending, setResending] = useState(false);
 
   const { otp: debugOtp, resetEmail, setOtp } = usePasswordReset();
-  const BASE_URL = import.meta.env.VITE_APP_URL;
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BASE_URL = config.APP_URL;
+    const BACKEND_URL = config.BACKEND_URL;
 
   // Countdown logic
   useEffect(() => {

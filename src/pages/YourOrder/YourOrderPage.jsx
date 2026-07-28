@@ -12,6 +12,7 @@ import { logout } from "../../features/auth/authSlice";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import NavBar from "../../components/navbar/NavBar";
+import ProductImage from "../../components/productimage/ProductImage";
 
 export default function YourOrderPage() {
   const { token, isAuthenticated } = useAuth();
@@ -154,9 +155,9 @@ export default function YourOrderPage() {
 
                 <div className={styles.itemsRow}>
                   {(order.items || []).slice(0, 4).map((item, i) => (
-                    <img
+                    <ProductImage
                       key={i}
-                      src={item.image || "https://via.placeholder.com/48"}
+                      src={item.image}
                       alt=""
                       className={styles.orderItemImage}
                     />

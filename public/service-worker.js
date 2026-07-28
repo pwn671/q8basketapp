@@ -1,8 +1,8 @@
 // Enhanced Service Worker for Q8 Basket PWA
-const CACHE_NAME = 'q8basket-cache-v2';
-const STATIC_CACHE_NAME = 'q8basket-static-v2';
-const DYNAMIC_CACHE_NAME = 'q8basket-dynamic-v2';
-const API_CACHE_NAME = 'q8basket-api-v2';
+const CACHE_NAME = 'q8basket-cache-v3';
+const STATIC_CACHE_NAME = 'q8basket-static-v3';
+const DYNAMIC_CACHE_NAME = 'q8basket-dynamic-v3';
+const API_CACHE_NAME = 'q8basket-api-v3';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [

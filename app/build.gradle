@@ -16,13 +16,31 @@
 
 import groovy.xml.MarkupBuilder
 
+def envFile = rootProject.file('../.env')
+def envValues = [:]
+if (envFile.exists()) {
+    envFile.eachLine { line ->
+        def matcher = line =~ /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/
+        if (matcher.matches() && !line.trim().startsWith('#')) {
+            envValues[matcher[0][1]] = matcher[0][2]
+        }
+    }
+}
+
+def apiBaseUrl = System.getenv('VITE_API_BASE_URL') ?: envValues['VITE_API_BASE_URL']
+if (!apiBaseUrl) {
+    throw new GradleException('VITE_API_BASE_URL must be defined in .env or the build environment.')
+}
+def appBaseUrl = apiBaseUrl.replaceFirst('/api/?$', '').replaceAll('/$', '')
+def appHost = new URI(appBaseUrl).host
+
 plugins {
     id 'com.android.application'
 }
 
 def twaManifest = [
     applicationId: 'com.q8basket.app.twa',
-    hostName: 'app.q8basket.com', // The domain being opened in the TWA.
+    hostName: appHost, // Derived from VITE_API_BASE_URL.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Q8 Basket - Online Grocery Shopping', // The application name.
     launcherName: 'Q8Basket', // The name shown on the Android Launcher.
@@ -39,7 +57,7 @@ def twaManifest = [
     // - short_name: Shorter string used if |name| is too long.
     // - url: Absolute path of the URL to launch the app with (e.g '/create').
     // - icon: Name of the resource in the drawable folder to use as an icon.
-    shortcuts: [[name:'Search Products', short_name:'Search', url:'https://app.q8basket.com/search', icon:'shortcut_0'],[name:'View Cart', short_name:'Cart', url:'https://app.q8basket.com/cart', icon:'shortcut_1'],[name:'My Profile', short_name:'Profile', url:'https://app.q8basket.com/profile', icon:'shortcut_2']],
+    shortcuts: [[name:'Search Products', short_name:'Search', url:"${appBaseUrl}/search", icon:'shortcut_0'],[name:'View Cart', short_name:'Cart', url:"${appBaseUrl}/cart", icon:'shortcut_1'],[name:'My Profile', short_name:'Profile', url:"${appBaseUrl}/profile", icon:'shortcut_2']],
     // The duration of fade out animation in milliseconds to be played when removing splash screen.
     splashScreenFadeOutDuration: 300,
     generatorApp: 'bubblewrap-cli', // Application that generated the Android Project
@@ -67,7 +85,7 @@ android {
         resValue "string", "launcherName", twaManifest.launcherName
 
         // The URL that will be used when launching the TWA from the Android Launcher
-        def launchUrl = "https://" + twaManifest.hostName + twaManifest.launchUrl
+        def launchUrl = appBaseUrl + twaManifest.launchUrl
         resValue "string", "launchUrl", launchUrl
 
         
@@ -78,12 +96,12 @@ android {
             // The URL the Web Manifest for the Progressive Web App that the TWA points to. This
             // is used by Chrome OS and Meta Quest to open the Web version of the PWA instead of
             // the TWA, as it will probably give a better user experience for non-mobile devices.
-            resValue "string", "webManifestUrl", 'https://app.q8basket.com/manifest.json'
+            resValue "string", "webManifestUrl", "${appBaseUrl}/manifest.json"
         
 
         
             // This is used by Meta Quest.
-            resValue "string", "fullScopeUrl", 'https://app.q8basket.com/'
+            resValue "string", "fullScopeUrl", "${appBaseUrl}/"
         
 
         

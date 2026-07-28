@@ -7,6 +7,7 @@ import { useCart } from "../../context/CartContext";
 import RelatedProducts from "../../components/relatedproduct/RelatedProducts";
 import config from "../../config/env";
 import { formatCurrency, getCurrencySymbol } from "../../config/currency";
+import ProductImage from "../../components/productimage/ProductImage";
 
 export default function ProductDetail() {
   const [emblaRef] = useEmblaCarousel({ loop: true });
@@ -40,7 +41,7 @@ export default function ProductDetail() {
               if (productsData.status && productsData.data) {
                 // Filter out the current product and limit to 6 items
                 const filteredProducts = productsData.data
-                  .filter(p => p.id !== parseInt(id))
+                  .filter((p) => p.id !== parseInt(id))
                   .slice(0, 6);
                 setRelatedProducts(filteredProducts);
               }
@@ -97,15 +98,20 @@ export default function ProductDetail() {
   if (loading) return <p>Loading...</p>;
   if (!product) return <p>Product not found</p>;
 
+  const productImages =
+    Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : [{ id: "default-product-image", image: null }];
+
   return (
     <div className={styles.container}>
       {/* Header Image */}
       <div className={styles.imageWrapper}>
         <div className={styles.embla} ref={emblaRef}>
           <div className={styles.embla__container}>
-            {product.images.map((img) => (
+            {productImages.map((img) => (
               <div key={img.id} className={styles.embla__slide}>
-                <img
+                <ProductImage
                   src={img.image}
                   alt={product.title}
                   className={styles.productImg}
@@ -140,7 +146,9 @@ export default function ProductDetail() {
           </p>
           <p className={styles.price}>
             {formatCurrency(product.current_price)}{" "}
-            <span className={styles.mrp}>{formatCurrency(product.previous_price)}</span>
+            <span className={styles.mrp}>
+              {formatCurrency(product.previous_price)}
+            </span>
           </p>
 
           {/* Toggleable Long Description */}
@@ -173,7 +181,9 @@ export default function ProductDetail() {
                   {showPolicy ? "Hide Policy" : "View Policy"}
                   <img
                     src={
-                      showPolicy ? "/icons/arrowup1.svg" : "/icons/arrow-down-.svg"
+                      showPolicy
+                        ? "/icons/arrowup1.svg"
+                        : "/icons/arrow-down-.svg"
                     }
                     alt={showPolicy ? "up" : "down"}
                     className={styles.arrow}
@@ -207,7 +217,9 @@ export default function ProductDetail() {
           </small>
           <p>
             {formatCurrency(product.current_price)}{" "}
-            <span className={styles.mrp}>{formatCurrency(product.previous_price)}</span>
+            <span className={styles.mrp}>
+              {formatCurrency(product.previous_price)}
+            </span>
           </p>
 
           <small>Inclusive of all taxes</small>

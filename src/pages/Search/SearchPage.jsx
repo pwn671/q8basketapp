@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { formatCurrency } from "../../config/currency";
 import NavBar from "../../components/navbar/NavBar";
 import useLockBodyScrollOnApp from "../../hooks/useLockBodyScrollOnApp";
+import ProductImage from "../../components/productimage/ProductImage";
 
 export default function SearchPage() {
   const location = useLocation();
@@ -145,7 +146,7 @@ export default function SearchPage() {
                 return (
                   <div key={p.id} className={styles.card}>
                     <div className={styles.imageWrapper} style={{ position: "relative" }}>
-                      <img
+                      <ProductImage
                         src={p.thumbnail}
                         alt={p.title}
                         className={styles.productImg}

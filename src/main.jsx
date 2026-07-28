@@ -1,40 +1,38 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import store from './store/store';
-import { Provider } from 'react-redux';
-import { PasswordResetProvider } from './context/PasswordResetContext.jsx';
-import { CartProvider } from './context/CartContext.jsx';
-import AuthInitializer from './components/AuthInitializer.jsx';
-import ThemeProvider from './components/theme/ThemeProvider.jsx';
-import ErrorBoundary from './components/ErrorBoundary.jsx';
-import { OfflineIndicator, ServiceWorkerUpdate } from './components/PWAUtils.jsx';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { Capacitor } from '@capacitor/core';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import store from "./store/store";
+import { Provider } from "react-redux";
+import { PasswordResetProvider } from "./context/PasswordResetContext.jsx";
+import { CartProvider } from "./context/CartContext.jsx";
+import AuthInitializer from "./components/AuthInitializer.jsx";
+import ThemeProvider from "./components/theme/ThemeProvider.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import {
+  OfflineIndicator,
+  ServiceWorkerUpdate,
+} from "./components/PWAUtils.jsx";
+import { Capacitor } from "@capacitor/core";
+import { initializeGoogleAuth } from "./utils/googleAuth";
 
-import './assets/styles/styles.css';
+import "./assets/styles/styles.css";
 
 // Initialize Google Auth ONLY for mobile platforms
 // Android: uses web client (from strings.xml server_client_id) - requestIdToken(webClientId) works
 // iOS: must use iOS client (from GoogleService-Info.plist) - GIDConfiguration requires it for sign-in
 if (Capacitor.isNativePlatform()) {
   const platform = Capacitor.getPlatform();
-  const clientId = platform === 'ios'
-    ? (import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS || import.meta.env.VITE_GOOGLE_CLIENT_ID)
-    : (import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE);
+  const clientId =
+    platform === "ios"
+      ? import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS ||
+        import.meta.env.VITE_GOOGLE_CLIENT_ID
+      : import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+        import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE;
 
-  try {
-    GoogleAuth.initialize({
-      clientId,
-      scopes: ['profile', 'email'],
-      grantOfflineAccess: true,
-    });
-  } catch (initError) {
-    console.error('❌ [INIT] Failed to initialize GoogleAuth:', initError);
-  }
+  initializeGoogleAuth(clientId).catch(() => {});
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
@@ -51,43 +49,46 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </AuthInitializer>
       </Provider>
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
 
 // ✅ Enhanced Service Worker registration for PWA
 // Register service worker after app is ready to prevent white screen on first install
-if ('serviceWorker' in navigator) {
+if ("serviceWorker" in navigator) {
   // Use a small delay to ensure app loads first, especially on first install
   const registerServiceWorker = () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    navigator.serviceWorker
+      .register("/service-worker.js", { scope: "/" })
       .then((registration) => {
-        
         // Don't wait for service worker to be ready - let app load normally
         if (registration.active) {
         }
-        
+
         // Listen for updates (only relevant after first install)
-        registration.addEventListener('updatefound', () => {
+        registration.addEventListener("updatefound", () => {
           const newWorker = registration.installing;
           if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.addEventListener("statechange", () => {
+              if (
+                newWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
                 // New content is available, notify the user
-                window.dispatchEvent(new CustomEvent('sw-update-available'));
+                window.dispatchEvent(new CustomEvent("sw-update-available"));
               }
             });
           }
         });
       })
       .catch((error) => {
-        console.error('Service Worker registration failed:', error);
+        console.error("Service Worker registration failed:", error);
         // Don't block app if service worker fails - app should work without it
       });
   };
 
   // Register after DOM is ready, with a small delay for first install
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", () => {
       // Small delay to ensure app starts loading first
       setTimeout(registerServiceWorker, 500);
     });
@@ -97,6 +98,5 @@ if ('serviceWorker' in navigator) {
   }
 
   // Listen for service worker updates
-  window.addEventListener('sw-update-available', () => {
-  });
+  window.addEventListener("sw-update-available", () => {});
 }

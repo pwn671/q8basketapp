@@ -15,8 +15,7 @@
       "https://accounts.youtube.com/*",
       "https://*.google.com/*",
       "https://*.googleapis.com/*",
-      "https://app.q8basket.com/*",
-      "https://demo.q8basket.com/*"
+      "https://*.q8basket.com/*"
     ]
   },
   "plugins": {

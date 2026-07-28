@@ -2,6 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./ProductCard.module.css";
+import ProductImage from "../productimage/ProductImage";
 
 export default function ProductCard({ id, title, thumbnail, category_id }) {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function ProductCard({ id, title, thumbnail, category_id }) {
   return (
     <li key={id} className={styles.productCard} role="listitem" onClick={handleProductCard} >
       <div className={styles.imageWrapper}  style={{ cursor: "pointer" }}>
-        <img
+        <ProductImage
           src={thumbnail}
           alt={title}
           loading="lazy"
