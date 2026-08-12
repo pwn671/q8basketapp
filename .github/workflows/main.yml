@@ -36,22 +36,63 @@ jobs:
 
       - name: Check Xcode workspace
         run: |
+          echo "===== XCODE WORKSPACE ====="
           xcodebuild -workspace ios/App/App.xcworkspace -list
 
       - name: Check Xcode project
         run: |
+          echo "===== XCODE PROJECT ====="
           xcodebuild -project ios/App/App.xcodeproj -list
+
+      - name: Find iOS Scheme
+        id: scheme
+        run: |
+          echo "Finding available Xcode schemes..."
+
+          SCHEME=$(xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -list |
+            awk '
+              /Schemes:/ {
+                found=1
+                next
+              }
+              found && NF {
+                print $1
+                exit
+              }
+            ')
+
+          if [ -z "$SCHEME" ]; then
+            echo "ERROR: No Xcode scheme found."
+            exit 1
+          fi
+
+          echo "Found scheme: $SCHEME"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS Archive
         run: |
+          echo "Building archive using scheme: ${{ steps.scheme.outputs.scheme }}"
+
           xcodebuild \
-            -project ios/App/App.xcodeproj \
-            -scheme App \
+            -workspace ios/App/App.xcworkspace \
+            -scheme "${{ steps.scheme.outputs.scheme }}" \
             -sdk iphoneos \
             -configuration Release \
             -archivePath build/Q8Basket.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             archive
+
+      - name: Check Archive
+        run: |
+          if [ -d "build/Q8Basket.xcarchive" ]; then
+            echo "iOS Archive created successfully."
+            ls -la build/Q8Basket.xcarchive
+          else
+            echo "ERROR: iOS Archive was not created."
+            exit 1
+          fi
 
       - name: Upload iOS Archive
         uses: actions/upload-artifact@v4
