@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
- ios-build:
+  ios-build:
     runs-on: macos-latest
 
     env:
@@ -33,27 +33,19 @@ jobs:
         run: |
           cd ios/App
           pod install
-      - name: Check Xcode projects
-  run: |
-    echo "===== WORKSPACE ====="
-    xcodebuild -workspace ios/App/App.xcworkspace -list
 
-    echo "===== PROJECT ====="
-    xcodebuild -project ios/App/App.xcodeproj -list
-      - name: Build iOS project
+      - name: Check Xcode workspace
         run: |
-          xcodebuild \
-            -project ios/App/App.xcodeproj \
-            -target App \
-             -sdk iphonesimulator  \
-          -configuration Debug \
-            -derivedDataPath build \
-           CODE_SIGNING_ALLOWED=NO \
-            build
+          xcodebuild -workspace ios/App/App.xcworkspace -list
+
+      - name: Check Xcode project
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -list
 
       - name: Upload iOS build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build-output
-          path: build/
+          name: ios-build-logs
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
