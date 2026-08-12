@@ -42,10 +42,26 @@ jobs:
         run: |
           xcodebuild -project ios/App/App.xcodeproj -list
 
+      - name: Build iOS Archive
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath build/Q8Basket.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Upload iOS Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Q8Basket-iOS-Archive
+          path: build/Q8Basket.xcarchive
+
       - name: Upload iOS build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-build-logs
-          path: |
-            ~/Library/Logs/DiagnosticReports/*
+          path: ~/Library/Logs/DiagnosticReports/*
