@@ -5,6 +5,7 @@ import { registerUser } from "../../features/auth/authThunks";
 import { resetAuthState } from "../../features/auth/authSlice";
 import { toast, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { SocialLogin } from "@capgo/capacitor-social-login";
 import { jwtDecode } from "jwt-decode";
 import { Capacitor } from "@capacitor/core";
 import { useNavigate } from "react-router-dom";
@@ -200,6 +201,25 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
 
   useLockBodyScrollOnApp();
 
+  useEffect(() => {
+    if (!isMobileApp) return;
+
+    const initGoogleLogin = async () => {
+      try {
+        await SocialLogin.initialize({
+          google: {
+            webClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          },
+        });
+
+        console.log("✅ Native Google Sign-In initialized");
+      } catch (error) {
+        console.error("❌ Native Google Sign-In initialization failed:", error);
+      }
+    };
+
+    initGoogleLogin();
+  }, [isMobileApp]);
   // ✅ Redirect on successful login
   useEffect(() => {
     if (user && token && !loading) {
@@ -392,7 +412,106 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
       });
     }
   };
+  const handleNativeGoogleSignup = async () => {
+    console.log("🔵 Native Google Sign-Up clicked");
 
+    try {
+      const login = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      console.log("✅ Native Google response:", login);
+
+      const idToken = login?.result?.idToken;
+
+      if (!idToken) {
+        throw new Error("Google ID token was not received.");
+      }
+
+      const decoded = jwtDecode(idToken);
+
+      console.log("✅ Google user:", decoded);
+
+      const { email, name, sub: googleId, picture } = decoded;
+
+      const body = {
+        provider: "google",
+        id_token: idToken,
+        name,
+        email,
+        googleId,
+        avatar: picture,
+      };
+
+      const loginUrl = `${BASE_URL.replace(/\/$/, "")}/user/social/login`;
+
+      console.log("📤 Sending Google signup/login request:", loginUrl);
+
+      const res = await fetch(loginUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      console.log("📦 Backend response:", data);
+
+      if (data.status && data.data) {
+        dispatch({
+          type: "auth/loginUser/fulfilled",
+          payload: {
+            user: data.data.user,
+            token: data.data.token,
+            refreshToken: data.data.refreshToken || null,
+          },
+        });
+
+        if (data.data.needs_profile_completion) {
+          localStorage.setItem("needsProfileCompletion", "true");
+
+          if (Array.isArray(data.data.missing)) {
+            localStorage.setItem(
+              "missingFields",
+              JSON.stringify(data.data.missing),
+            );
+          }
+        } else {
+          localStorage.removeItem("needsProfileCompletion");
+          localStorage.removeItem("missingFields");
+        }
+
+        localStorage.setItem("justLoggedIn", "true");
+
+        toast.success("Google signup successful!");
+      } else {
+        const errorMessage =
+          data?.error?.message ||
+          data?.error ||
+          data?.message ||
+          "Google signup failed!";
+
+        console.error("❌ Backend Google signup error:", errorMessage);
+
+        toast.error(errorMessage);
+
+        dispatch({
+          type: "auth/loginUser/rejected",
+          payload: {
+            message: errorMessage,
+            status: res.status || 500,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("❌ Native Google Signup Error:", error);
+
+      toast.error(error?.message || "Google Sign-Up failed. Please try again.");
+    }
+  };
   // ✅ Handle Google Signup Error
   const handleGoogleError = () => {
     toast.error("Google signup failed. Please try again.");
@@ -592,7 +711,7 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
         </button>
 
         {/* ✅ Social Sign-up - browser-safe Google button */}
-        {isGoogleAuthConfigured ? (
+        {/* {isGoogleAuthConfigured ? (
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
             <div
               style={{
@@ -601,9 +720,9 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
                 minHeight: "48px",
                 marginTop: "12px",
               }}
-            >
-              {/* GoogleLogin button - positioned to receive clicks */}
-              <div
+            > */}
+        {/* GoogleLogin button - positioned to receive clicks */}
+        {/* <div
                 ref={googleLoginRef}
                 style={{
                   position: "absolute",
@@ -618,9 +737,9 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
                   text="signup_with"
                   width={320}
                 />
-              </div>
-              {/* Custom styled overlay - visual only, clicks pass through */}
-              <div
+              </div> */}
+        {/* Custom styled overlay - visual only, clicks pass through */}
+        {/* <div
                 className={styles.socialButton}
                 style={{
                   position: "relative",
@@ -665,8 +784,101 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
             />
             <span>Google sign-up unavailable</span>
           </div>
-        )}
+        )} */}
+        {/* Google Sign-up */}
+        {isGoogleAuthConfigured ? (
+          isMobileApp ? (
+            // ================================
+            // ANDROID / IOS NATIVE GOOGLE
+            // ================================
+            <button
+              type="button"
+              className={styles.socialButton}
+              onClick={handleNativeGoogleSignup}
+              disabled={loading}
+              style={{
+                width: "100%",
+                marginTop: "12px",
+              }}
+            >
+              <img
+                src="/icons/google.svg"
+                alt=""
+                className={styles.socialIcon}
+              />
 
+              <span>{loading ? "Signing up..." : "Sign Up With Google"}</span>
+            </button>
+          ) : (
+            // ================================
+            // WEB / PWA GOOGLE
+            // ================================
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  minHeight: "48px",
+                  marginTop: "12px",
+                }}
+              >
+                <div
+                  ref={googleLoginRef}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: 0.01,
+                    zIndex: 1,
+                  }}
+                >
+                  <GoogleLogin
+                    onSuccess={handleGoogleSignup}
+                    onError={handleGoogleError}
+                    text="signup_with"
+                    width={320}
+                  />
+                </div>
+
+                <div
+                  className={styles.socialButton}
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                    pointerEvents: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    userSelect: "none",
+                  }}
+                >
+                  <img
+                    src="/icons/google.svg"
+                    alt=""
+                    className={styles.socialIcon}
+                    draggable={false}
+                  />
+
+                  <span>Sign Up With Google</span>
+                </div>
+              </div>
+            </GoogleOAuthProvider>
+          )
+        ) : (
+          <div
+            className={styles.socialButton}
+            style={{
+              opacity: 0.7,
+              cursor: "default",
+              width: "100%",
+              marginTop: "12px",
+            }}
+          >
+            <img src="/icons/google.svg" alt="" className={styles.socialIcon} />
+
+            <span>Google sign-up unavailable</span>
+          </div>
+        )}
         {/* Sign In Link */}
         <div className={styles.signUpText}>
           Already have an account?{" "}

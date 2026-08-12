@@ -4,6 +4,7 @@ import { loginUser } from "../../features/auth/authThunks";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { SocialLogin } from "@capgo/capacitor-social-login";
 import { jwtDecode } from "jwt-decode";
 import { Capacitor } from "@capacitor/core";
 import "react-toastify/dist/ReactToastify.css";
@@ -47,7 +48,25 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
   const BASE_URL = config.BACKEND_URL; // For auth endpoints and images
 
   useLockBodyScrollOnApp();
+  useEffect(() => {
+    if (!isMobileApp) return;
 
+    const initGoogleLogin = async () => {
+      try {
+        await SocialLogin.initialize({
+          google: {
+            webClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          },
+        });
+
+        console.log("✅ Native Google Sign-In initialized");
+      } catch (error) {
+        console.error("❌ Google Sign-In initialization failed:", error);
+      }
+    };
+
+    initGoogleLogin();
+  }, [isMobileApp]);
   // ✅ Redirect on successful login
   useEffect(() => {
     if (user && token && !loading) {
@@ -268,7 +287,89 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
       });
     }
   };
+  const handleNativeGoogleLogin = async () => {
+    console.log("🔵 Native Google button clicked");
 
+    try {
+      const login = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      console.log("✅ Native Google response:", login);
+
+      const idToken = login?.result?.idToken;
+
+      if (!idToken) {
+        throw new Error("Google ID token was not received.");
+      }
+
+      const decoded = jwtDecode(idToken);
+
+      console.log("✅ Google user:", decoded);
+
+      const body = {
+        provider: "google",
+        id_token: idToken,
+        name: decoded.name,
+        email: decoded.email,
+        googleId: decoded.sub,
+        avatar: decoded.picture,
+      };
+
+      const loginUrl = `${BASE_URL.replace(/\/$/, "")}/user/social/login`;
+
+      const res = await fetch(loginUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      console.log("📦 Backend response:", data);
+
+      if (!data.status || !data.data) {
+        throw new Error(
+          data?.error?.message ||
+            data?.error ||
+            data?.message ||
+            "Google login failed!",
+        );
+      }
+
+      dispatch({
+        type: "auth/loginUser/fulfilled",
+        payload: {
+          user: data.data.user,
+          token: data.data.token,
+          refreshToken: data.data.refreshToken || null,
+        },
+      });
+
+      localStorage.setItem("justLoggedIn", "true");
+
+      if (data.data.needs_profile_completion) {
+        localStorage.setItem("needsProfileCompletion", "true");
+
+        if (Array.isArray(data.data.missing)) {
+          localStorage.setItem(
+            "missingFields",
+            JSON.stringify(data.data.missing),
+          );
+        }
+      } else {
+        localStorage.removeItem("needsProfileCompletion");
+        localStorage.removeItem("missingFields");
+      }
+    } catch (error) {
+      console.error("❌ Native Google Login Error:", error);
+
+      toast.error(error?.message || "Google Sign-In failed. Please try again.");
+    }
+  };
   // ✅ Handle Google Login Error
   const handleGoogleError = () => {
     toast.error("Google login failed. Please try again.");
@@ -384,7 +485,7 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
           </button>
 
           {/* ✅ Social Sign-in - browser-safe Google button */}
-          {isGoogleAuthConfigured ? (
+          {/* {isGoogleAuthConfigured ? (
             <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
               <div
                 style={{
@@ -392,9 +493,9 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
                   width: "100%",
                   minHeight: "48px",
                 }}
-              >
-                {/* GoogleLogin button - positioned to receive clicks */}
-                <div
+              > */}
+          {/* GoogleLogin button - positioned to receive clicks */}
+          {/* <div
                   ref={googleLoginRef}
                   style={{
                     position: "absolute",
@@ -409,9 +510,9 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
                     text="signin_with"
                     width={320}
                   />
-                </div>
-                {/* Custom styled overlay - visual only, clicks pass through */}
-                <div
+                </div> */}
+          {/* Custom styled overlay - visual only, clicks pass through */}
+          {/* <div
                   className={styles.socialButton}
                   style={{
                     position: "relative",
@@ -451,8 +552,91 @@ export default function SignIn({ onForgotPassword, onSignUp }) {
               />
               <span>Google sign-in unavailable</span>
             </div>
-          )}
+          )} */}
+          {/* Google Sign-in */}
+          {isGoogleAuthConfigured ? (
+            isMobileApp ? (
+              <button
+                type="button"
+                className={styles.socialButton}
+                onClick={handleNativeGoogleLogin}
+                disabled={loading}
+              >
+                <img
+                  src="/icons/google.svg"
+                  alt=""
+                  className={styles.socialIcon}
+                />
 
+                <span>{loading ? "Signing in..." : "Sign In With Google"}</span>
+              </button>
+            ) : (
+              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    minHeight: "48px",
+                  }}
+                >
+                  <div
+                    ref={googleLoginRef}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      opacity: 0.01,
+                      zIndex: 1,
+                    }}
+                  >
+                    <GoogleLogin
+                      onSuccess={handleGoogleLogin}
+                      onError={handleGoogleError}
+                      text="signin_with"
+                      width={320}
+                    />
+                  </div>
+
+                  <div
+                    className={styles.socialButton}
+                    style={{
+                      position: "relative",
+                      zIndex: 2,
+                      pointerEvents: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <img
+                      src="/icons/google.svg"
+                      alt=""
+                      className={styles.socialIcon}
+                    />
+
+                    <span>Sign In With Google</span>
+                  </div>
+                </div>
+              </GoogleOAuthProvider>
+            )
+          ) : (
+            <div
+              className={styles.socialButton}
+              style={{
+                opacity: 0.7,
+                cursor: "default",
+                width: "100%",
+              }}
+            >
+              <img
+                src="/icons/google.svg"
+                alt=""
+                className={styles.socialIcon}
+              />
+
+              <span>Google sign-in unavailable</span>
+            </div>
+          )}
           {/* Sign Up */}
           <div className={styles.signUpText}>
             Don’t have an account?{" "}
