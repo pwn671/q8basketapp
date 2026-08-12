@@ -33,7 +33,13 @@ jobs:
         run: |
           cd ios/App
           pod install
+      - name: Check Xcode projects
+  run: |
+    echo "===== WORKSPACE ====="
+    xcodebuild -workspace ios/App/App.xcworkspace -list
 
+    echo "===== PROJECT ====="
+    xcodebuild -project ios/App/App.xcodeproj -list
       - name: Build iOS project
         run: |
           xcodebuild \
