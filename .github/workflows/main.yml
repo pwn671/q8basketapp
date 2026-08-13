@@ -590,9 +590,10 @@ jobs:
           fi
 
           IPA_BUNDLE_ID=$(
-            /usr/libexec/PlistBuddy \
-              -c "Print :CFBundleIdentifier" \
-              "$APP_PATH/Info.plist"
+             /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+             "$APP_PATH/Info.plist" \
+              | tr -d '[:space:]'
           )
 
           IPA_VERSION=$(
@@ -607,10 +608,18 @@ jobs:
               "$APP_PATH/Info.plist"
           )
 
-          echo "Bundle ID : $IPA_BUNDLE_ID"
+          echo "Bundle ID : [$IPA_BUNDLE_ID]"
           echo "Version   : $IPA_VERSION"
           echo "Build     : $IPA_BUILD"
 
+          EXPECTED_BUNDLE_ID="com.q8basket.marketplace"
+
+          if [ "$IPA_BUNDLE_ID" != "$EXPECTED_BUNDLE_ID" ]; then
+            echo "ERROR: Wrong Bundle ID."
+            echo "Expected: [$EXPECTED_BUNDLE_ID]"
+            echo "Found:    [$IPA_BUNDLE_ID]"
+            exit 1
+          fi
           if [ "$IPA_BUNDLE_ID" != "com.q8basket.marketplace" ]; then
             echo "ERROR: Wrong Bundle ID."
             exit 1
