@@ -492,7 +492,7 @@ jobs:
 
             <key>provisioningProfiles</key>
             <dict>
-              <key>com.q8basket.app</key>
+              <key>com.q8basket.marketplace</key>
               <string>Q8Basket AppStore Distribution</string>
             </dict>
 
