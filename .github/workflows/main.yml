@@ -17,49 +17,49 @@ jobs:
 
     steps:
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 1. Checkout
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------------
-      # 2. Node
-      # ---------------------------------------------------------
+      # =========================================================
+      # 2. Setup Node
+      # =========================================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 3. Install dependencies
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Install dependencies
         run: npm ci
 
-      # ---------------------------------------------------------
-      # 4. Build React/Vite app
-      # ---------------------------------------------------------
+      # =========================================================
+      # 4. Build web app
+      # =========================================================
       - name: Build web app
         run: npm run build
 
-      # ---------------------------------------------------------
-      # 5. Capacitor iOS
-      # ---------------------------------------------------------
+      # =========================================================
+      # 5. Sync Capacitor iOS
+      # =========================================================
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      # ---------------------------------------------------------
-      # 6. CocoaPods
-      # ---------------------------------------------------------
+      # =========================================================
+      # 6. Install CocoaPods
+      # =========================================================
       - name: Install CocoaPods dependencies
         working-directory: ios/App
         run: pod install
 
-      # ---------------------------------------------------------
-      # 7. Create temporary keychain
-      # ---------------------------------------------------------
+      # =========================================================
+      # 7. Create signing keychain
+      # =========================================================
       - name: Create signing keychain
         run: |
           security create-keychain \
@@ -77,9 +77,9 @@ jobs:
             -lut 21600 \
             build.keychain-db
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 8. Decode P12
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Decode P12
         env:
           P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
@@ -88,17 +88,16 @@ jobs:
 
           echo "Checking P12 file..."
           ls -lh distribution.p12
-
           file distribution.p12
 
-      # ---------------------------------------------------------
-      # 9. Verify P12 password BEFORE importing
-      # ---------------------------------------------------------
+      # =========================================================
+      # 9. Verify P12 password
+      # =========================================================
       - name: Verify P12 password
         env:
           P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
         run: |
-          echo "Verifying P12..."
+          echo "Verifying P12 password..."
 
           openssl pkcs12 \
             -info \
@@ -106,11 +105,11 @@ jobs:
             -noout \
             -passin env:P12_PASSWORD
 
-          echo "P12 password is correct."
+          echo "P12 verification successful."
 
-      # ---------------------------------------------------------
-      # 10. Import P12 into keychain
-      # ---------------------------------------------------------
+      # =========================================================
+      # 10. Import signing certificate
+      # =========================================================
       - name: Install signing certificate
         env:
           P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
@@ -127,16 +126,15 @@ jobs:
             -k "build-password" \
             build.keychain-db
 
-          echo "Installed signing certificate."
-
+          echo "Signing identities:"
           security find-identity \
             -v \
             -p codesigning \
             build.keychain-db
 
-      # ---------------------------------------------------------
-      # 11. Decode provisioning profile
-      # ---------------------------------------------------------
+      # =========================================================
+      # 11. Install provisioning profile
+      # =========================================================
       - name: Install provisioning profile
         env:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
@@ -147,79 +145,134 @@ jobs:
             | base64 --decode \
             > "$HOME/Library/MobileDevice/Provisioning Profiles/Q8Basket_AppStore_Distribution.mobileprovision"
 
-          echo "Provisioning profile installed."
-
+          echo "Provisioning profile:"
           ls -lh "$HOME/Library/MobileDevice/Provisioning Profiles/"
 
-      # ---------------------------------------------------------
-      # 12. Read provisioning profile UUID
-      # ---------------------------------------------------------
-      - name: Get provisioning profile UUID
+      # =========================================================
+      # 12. Read provisioning profile
+      # =========================================================
+      - name: Get provisioning profile information
         id: profile
         run: |
+          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/Q8Basket_AppStore_Distribution.mobileprovision"
+
           security cms \
             -D \
-            -i "$HOME/Library/MobileDevice/Provisioning Profiles/Q8Basket_AppStore_Distribution.mobileprovision" \
+            -i "$PROFILE_PATH" \
             > profile.plist
 
           PROFILE_UUID=$(
             /usr/libexec/PlistBuddy \
-              -c "Print :UUID" \
-              profile.plist
+            -c "Print :UUID" \
+            profile.plist
           )
 
           PROFILE_NAME=$(
             /usr/libexec/PlistBuddy \
-              -c "Print :Name" \
-              profile.plist
+            -c "Print :Name" \
+            profile.plist
           )
 
           PROFILE_APP_ID=$(
             /usr/libexec/PlistBuddy \
-              -c "Print :Entitlements:application-identifier" \
-              profile.plist
+            -c "Print :Entitlements:application-identifier" \
+            profile.plist
           )
 
+          echo "===================================="
           echo "Profile UUID: $PROFILE_UUID"
           echo "Profile Name: $PROFILE_NAME"
           echo "Profile App ID: $PROFILE_APP_ID"
+          echo "===================================="
 
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_OUTPUT"
           echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_OUTPUT"
 
-      # ---------------------------------------------------------
-      # 13. Check Xcode project
-      # ---------------------------------------------------------
+      # =========================================================
+      # 13. Check workspace
+      # =========================================================
       - name: Check Xcode workspace
         working-directory: ios/App
         run: |
-          echo "Xcode files:"
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "Files:"
           ls -la
 
+          echo ""
           echo "Workspace:"
           ls -la *.xcworkspace
 
-      # ---------------------------------------------------------
-      # 14. Find scheme
-      # ---------------------------------------------------------
-      - name: Find iOS Scheme
+      # =========================================================
+      # 14. Detect Xcode scheme automatically
+      # =========================================================
+      - name: Detect Xcode scheme
+        id: scheme
         working-directory: ios/App
         run: |
+          echo "===================================="
+          echo "XCODE WORKSPACE INFORMATION"
+          echo "===================================="
+
           xcodebuild \
             -workspace App.xcworkspace \
             -list
 
-      # ---------------------------------------------------------
+          echo ""
+          echo "===================================="
+          echo "Detecting scheme..."
+          echo "===================================="
+
+          SCHEME=$(
+            xcodebuild \
+              -workspace App.xcworkspace \
+              -list 2>/dev/null |
+            awk '
+              /^Schemes:/ {
+                found=1
+                next
+              }
+
+              found && NF {
+                print $0
+                exit
+              }
+            ' |
+            sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+          )
+
+          if [ -z "$SCHEME" ]; then
+            echo "ERROR: No shared Xcode scheme was found."
+            echo ""
+            echo "Available schemes:"
+            xcodebuild \
+              -workspace App.xcworkspace \
+              -list
+
+            exit 1
+          fi
+
+          echo "Detected scheme: $SCHEME"
+
+          echo "SCHEME=$SCHEME" >> "$GITHUB_OUTPUT"
+
+      # =========================================================
       # 15. Create ExportOptions.plist
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Create ExportOptions.plist
+        env:
+          PROFILE_NAME: ${{ steps.profile.outputs.PROFILE_NAME }}
         run: |
           cat > ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
           "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
           <plist version="1.0">
           <dict>
+
               <key>method</key>
               <string>app-store</string>
 
@@ -235,7 +288,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>${BUNDLE_ID}</key>
-                  <string>${{ steps.profile.outputs.PROFILE_NAME }}</string>
+                  <string>${PROFILE_NAME}</string>
               </dict>
 
               <key>stripSwiftSymbols</key>
@@ -246,25 +299,36 @@ jobs:
 
               <key>uploadSymbols</key>
               <true/>
+
           </dict>
           </plist>
           EOF
 
+          echo "ExportOptions.plist:"
           cat ExportOptions.plist
 
-      # ---------------------------------------------------------
-      # 16. Build Archive
-      # ---------------------------------------------------------
+      # =========================================================
+      # 16. Build iOS Archive
+      # =========================================================
       - name: Build iOS Archive
         working-directory: ios/App
         env:
           PROFILE_NAME: ${{ steps.profile.outputs.PROFILE_NAME }}
+          SCHEME: ${{ steps.scheme.outputs.SCHEME }}
         run: |
+          echo "===================================="
+          echo "Building iOS Archive"
+          echo "Scheme: $SCHEME"
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "Team ID: $DEVELOPMENT_TEAM"
+          echo "Profile: $PROFILE_NAME"
+          echo "===================================="
+
           rm -rf build
 
           xcodebuild \
             -workspace App.xcworkspace \
-            -scheme App \
+            -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
@@ -276,22 +340,25 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             clean archive
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 17. Check Archive
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Check Archive
         run: |
           echo "Checking archive..."
 
           ls -lah build/
 
-          test -d build/Q8Basket.xcarchive
+          if [ ! -d "build/Q8Basket.xcarchive" ]; then
+            echo "ERROR: Archive was not created."
+            exit 1
+          fi
 
           echo "Archive created successfully."
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 18. Export IPA
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Export IPA
         run: |
           rm -rf build/export
@@ -302,26 +369,34 @@ jobs:
             -exportPath build/export \
             -exportOptionsPlist ExportOptions.plist
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 19. Check IPA
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Check IPA
         run: |
-          echo "IPA files:"
+          echo "===================================="
+          echo "IPA FILES"
+          echo "===================================="
 
           find build/export \
-            -maxdepth 2 \
             -type f \
             -name "*.ipa" \
             -print
 
-          test -n "$(find build/export -name '*.ipa' -print -quit)"
+          IPA_FILE=$(find build/export -type f -name "*.ipa" | head -n 1)
 
-          echo "IPA created successfully."
+          if [ -z "$IPA_FILE" ]; then
+            echo "ERROR: IPA was not created."
+            exit 1
+          fi
 
-      # ---------------------------------------------------------
+          echo ""
+          echo "IPA created successfully:"
+          echo "$IPA_FILE"
+
+      # =========================================================
       # 20. Upload IPA
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
@@ -329,9 +404,9 @@ jobs:
           path: build/export/*.ipa
           if-no-files-found: error
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 21. Upload Archive
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Upload iOS Archive
         uses: actions/upload-artifact@v4
         with:
@@ -339,13 +414,14 @@ jobs:
           path: build/Q8Basket.xcarchive
           if-no-files-found: error
 
-      # ---------------------------------------------------------
+      # =========================================================
       # 22. Cleanup
-      # ---------------------------------------------------------
+      # =========================================================
       - name: Cleanup signing files
         if: always()
         run: |
           security delete-keychain build.keychain-db || true
+
           rm -f distribution.p12
           rm -f profile.plist
           rm -f ExportOptions.plist
