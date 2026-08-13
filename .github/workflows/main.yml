@@ -17,8 +17,17 @@ jobs:
 
     steps:
 
+      # ============================================================
+      # 1. CHECKOUT
+      # ============================================================
+
       - name: Checkout code
         uses: actions/checkout@v4
+
+
+      # ============================================================
+      # 2. NODE
+      # ============================================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,21 +35,48 @@ jobs:
           node-version: 20
           cache: npm
 
+
+      # ============================================================
+      # 3. INSTALL DEPENDENCIES
+      # ============================================================
+
       - name: Install dependencies
         run: npm ci
+
+
+      # ============================================================
+      # 4. BUILD WEB APP
+      # ============================================================
 
       - name: Build web app
         run: npm run build
 
+
+      # ============================================================
+      # 5. SYNC CAPACITOR
+      # ============================================================
+
       - name: Sync Capacitor iOS
         run: npx cap sync ios
+
+
+      # ============================================================
+      # 6. COCOAPODS
+      # ============================================================
 
       - name: Install CocoaPods
         working-directory: ios/App
         run: pod install --repo-update
 
+
+      # ============================================================
+      # 7. CREATE SIGNING KEYCHAIN
+      # ============================================================
+
       - name: Create signing keychain
         run: |
+          set -e
+
           KEYCHAIN_PATH="$RUNNER_TEMP/q8basket.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
 
@@ -62,18 +98,40 @@ jobs:
           security list-keychains -d user -s \
             "$KEYCHAIN_PATH"
 
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+
+      # ============================================================
+      # 8. DECODE P12
+      # ============================================================
+
       - name: Decode P12
         env:
           P12_BASE64: ${{ secrets.P12_BASE64 }}
         run: |
-          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/distribution.p12"
+          set -e
+
+          echo "$P12_BASE64" \
+            | base64 --decode \
+            > "$RUNNER_TEMP/distribution.p12"
 
           test -s "$RUNNER_TEMP/distribution.p12"
+
+          echo "P12 decoded successfully."
+
+
+      # ============================================================
+      # 9. VERIFY P12
+      # ============================================================
 
       - name: Verify P12
         env:
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
         run: |
+          set -e
+
+          echo "Verifying P12..."
+
           openssl pkcs12 \
             -info \
             -in "$RUNNER_TEMP/distribution.p12" \
@@ -81,10 +139,19 @@ jobs:
             -passin env:P12_PASSWORD \
             -legacy
 
+          echo "P12 verification successful."
+
+
+      # ============================================================
+      # 10. IMPORT SIGNING CERTIFICATE
+      # ============================================================
+
       - name: Import signing certificate
         env:
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
         run: |
+          set -e
+
           security import \
             "$RUNNER_TEMP/distribution.p12" \
             -k "$KEYCHAIN_PATH" \
@@ -98,23 +165,41 @@ jobs:
             -k "$KEYCHAIN_PASSWORD" \
             "$KEYCHAIN_PATH"
 
+          echo "Available signing identities:"
+
           security find-identity \
             -v \
             -p codesigning \
             "$KEYCHAIN_PATH"
 
+
+      # ============================================================
+      # 11. DECODE PROVISIONING PROFILE
+      # ============================================================
+
       - name: Decode provisioning profile
         env:
           IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
         run: |
+          set -e
+
           echo "$IOS_PROVISION_PROFILE_BASE64" \
             | base64 --decode \
             > "$RUNNER_TEMP/Q8Basket.mobileprovision"
 
           test -s "$RUNNER_TEMP/Q8Basket.mobileprovision"
 
+          echo "Provisioning profile decoded successfully."
+
+
+      # ============================================================
+      # 12. INSTALL PROVISIONING PROFILE
+      # ============================================================
+
       - name: Install provisioning profile
         run: |
+          set -e
+
           PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
 
           mkdir -p "$PROFILE_DIR"
@@ -125,17 +210,39 @@ jobs:
               | plutil -extract UUID raw -
           )
 
+          PROFILE_NAME=$(
+            security cms -D \
+              -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
+              | plutil -extract Name raw -
+          )
+
+          PROFILE_APP_ID=$(
+            security cms -D \
+              -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
+              | plutil -extract Entitlements.application-identifier raw -
+          )
+
           echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
 
           cp \
             "$RUNNER_TEMP/Q8Basket.mobileprovision" \
             "$PROFILE_DIR/$UUID.mobileprovision"
 
-          echo "Installed profile: $UUID"
+          echo "Installed provisioning profile:"
+          echo "Name: $PROFILE_NAME"
+          echo "UUID: $UUID"
+          echo "Application Identifier: $PROFILE_APP_ID"
+
+
+      # ============================================================
+      # 13. CONFIGURE Q8BASKET SIGNING
+      # ============================================================
 
       - name: Configure Q8Basket signing
         working-directory: ios/App
         run: |
+          set -e
+
           ruby <<'RUBY'
           require 'xcodeproj'
 
@@ -162,9 +269,16 @@ jobs:
           puts 'Q8Basket signing configured.'
           RUBY
 
+
+      # ============================================================
+      # 14. DISABLE COCOAPODS SIGNING
+      # ============================================================
+
       - name: Disable signing for CocoaPods
         working-directory: ios/App
         run: |
+          set -e
+
           ruby <<'RUBY'
           require 'xcodeproj'
 
@@ -172,12 +286,14 @@ jobs:
 
           project.targets.each do |target|
             target.build_configurations.each do |config|
+
               config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
               config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
               config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
               config.build_settings['CODE_SIGN_IDENTITY'] = ''
               config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ''
               config.build_settings['PROVISIONING_PROFILE'] = ''
+
             end
           end
 
@@ -186,12 +302,27 @@ jobs:
           puts 'CocoaPods signing disabled.'
           RUBY
 
+
+      # ============================================================
+      # 15. VERIFY XCODE SCHEME
+      # ============================================================
+
       - name: Verify Q8Basket scheme
         working-directory: ios/App
         run: |
+          set -e
+
+          echo "=========================================="
+          echo "XCODE PROJECT"
+          echo "=========================================="
+
           xcodebuild \
             -workspace App.xcworkspace \
             -list
+
+          echo "=========================================="
+          echo "BUILD SETTINGS"
+          echo "=========================================="
 
           xcodebuild \
             -workspace App.xcworkspace \
@@ -201,14 +332,25 @@ jobs:
             > "$RUNNER_TEMP/build-settings.txt"
 
           grep -E \
-            'PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE_SPECIFIER' \
+            'PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE_SPECIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION' \
             "$RUNNER_TEMP/build-settings.txt" \
             || true
+
+
+      # ============================================================
+      # 16. BUILD IOS ARCHIVE
+      # ============================================================
 
       - name: Build iOS Archive
         working-directory: ios/App
         run: |
+          set -e
+
           ARCHIVE_PATH="$RUNNER_TEMP/Q8Basket.xcarchive"
+
+          echo "=========================================="
+          echo "BUILDING Q8BASKET ARCHIVE"
+          echo "=========================================="
 
           xcodebuild \
             -workspace App.xcworkspace \
@@ -216,20 +358,35 @@ jobs:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH" \
+            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             clean archive
 
           test -d "$ARCHIVE_PATH"
 
           echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
 
+          echo "Archive created successfully."
+
+
+      # ============================================================
+      # 17. CREATE EXPORT OPTIONS
+      # ============================================================
+
       - name: Create ExportOptions
         run: |
+          set -e
+
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
           "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
+
             <key>method</key>
             <string>app-store</string>
 
@@ -253,15 +410,29 @@ jobs:
 
             <key>compileBitcode</key>
             <false/>
+
           </dict>
           </plist>
           PLIST
 
+          echo "ExportOptions.plist created."
+
+
+      # ============================================================
+      # 18. EXPORT IPA
+      # ============================================================
+
       - name: Export IPA
         run: |
+          set -e
+
           EXPORT_PATH="$RUNNER_TEMP/export"
 
           mkdir -p "$EXPORT_PATH"
+
+          echo "=========================================="
+          echo "EXPORTING IPA"
+          echo "=========================================="
 
           xcodebuild \
             -exportArchive \
@@ -272,23 +443,185 @@ jobs:
           IPA_FILE=$(find "$EXPORT_PATH" -name "*.ipa" -type f | head -1)
 
           if [ -z "$IPA_FILE" ]; then
-            echo "IPA was not created."
+            echo "ERROR: IPA was not created."
             exit 1
           fi
 
           echo "IPA_FILE=$IPA_FILE" >> "$GITHUB_ENV"
 
+          echo "=========================================="
+          echo "IPA CREATED"
+          echo "=========================================="
+
           ls -lh "$IPA_FILE"
 
-      - name: Upload IPA
+
+      # ============================================================
+      # 19. VERIFY IPA VERSION / BUILD
+      # ============================================================
+
+      - name: Verify IPA version
+        run: |
+          set -e
+
+          echo "=========================================="
+          echo "VERIFYING IPA"
+          echo "=========================================="
+
+          rm -rf "$RUNNER_TEMP/ipa-check"
+
+          mkdir -p "$RUNNER_TEMP/ipa-check"
+
+          unzip -q \
+            "$IPA_FILE" \
+            -d "$RUNNER_TEMP/ipa-check"
+
+          APP_PATH=$(find "$RUNNER_TEMP/ipa-check/Payload" -maxdepth 1 -name "*.app" -type d | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: App not found inside IPA."
+            exit 1
+          fi
+
+          BUNDLE_ID=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :CFBundleIdentifier" \
+              "$APP_PATH/Info.plist"
+          )
+
+          VERSION=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :CFBundleShortVersionString" \
+              "$APP_PATH/Info.plist"
+          )
+
+          BUILD=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :CFBundleVersion" \
+              "$APP_PATH/Info.plist"
+          )
+
+          echo "Bundle ID : $BUNDLE_ID"
+          echo "Version   : $VERSION"
+          echo "Build     : $BUILD"
+
+          if [ "$BUNDLE_ID" != "com.q8basket.app" ]; then
+            echo "ERROR: Wrong Bundle ID."
+            exit 1
+          fi
+
+          if [ "$VERSION" != "2.4.0" ]; then
+            echo "ERROR: Expected version 2.4.0 but found $VERSION"
+            exit 1
+          fi
+
+          if [ "$BUILD" != "4" ]; then
+            echo "ERROR: Expected build 4 but found $BUILD"
+            exit 1
+          fi
+
+          echo "IPA version verification successful."
+
+
+      # ============================================================
+      # 20. UPLOAD IPA AS GITHUB ARTIFACT
+      # ============================================================
+
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: Q8Basket-iOS-IPA
           path: ${{ env.IPA_FILE }}
+          if-no-files-found: error
+
+
+      # ============================================================
+      # 21. PREPARE APP STORE CONNECT API KEY
+      # ============================================================
+
+      - name: Prepare App Store Connect API key
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -e
+
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+
+          mkdir -p "$KEY_DIR"
+
+          KEY_PATH="$KEY_DIR/AuthKey_${APPSTORE_KEY_ID}.p8"
+
+          printf '%s' "$APPSTORE_PRIVATE_KEY" > "$KEY_PATH"
+
+          chmod 600 "$KEY_PATH"
+
+          test -s "$KEY_PATH"
+
+          echo "APPSTORE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+          echo "App Store Connect API key prepared."
+
+
+      # ============================================================
+      # 22. UPLOAD IPA TO APP STORE CONNECT
+      # ============================================================
+
+      - name: Upload IPA to App Store Connect
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -e
+
+          echo "=========================================="
+          echo "UPLOADING Q8BASKET TO APP STORE CONNECT"
+          echo "=========================================="
+
+          echo "IPA:"
+          echo "$IPA_FILE"
+
+          echo "Key ID:"
+          echo "$APPSTORE_KEY_ID"
+
+          echo "Issuer:"
+          echo "$APPSTORE_ISSUER_ID"
+
+          test -f "$IPA_FILE"
+          test -f "$APPSTORE_KEY_PATH"
+
+          xcrun altool \
+            --upload-app \
+            -f "$IPA_FILE" \
+            -t ios \
+            --apiKey "$APPSTORE_KEY_ID" \
+            --apiIssuer "$APPSTORE_ISSUER_ID" \
+            --output-format xml
+
+          echo "=========================================="
+          echo "APP STORE CONNECT UPLOAD SUCCESSFUL"
+          echo "=========================================="
+
+
+      # ============================================================
+      # 23. CLEANUP
+      # ============================================================
 
       - name: Cleanup
         if: always()
         run: |
-          security delete-keychain \
-            "$KEYCHAIN_PATH" \
-            2>/dev/null || true
+          set +e
+
+          if [ -n "$KEYCHAIN_PATH" ]; then
+            security delete-keychain \
+              "$KEYCHAIN_PATH" \
+              2>/dev/null || true
+          fi
+
+          if [ -n "$APPSTORE_KEY_PATH" ]; then
+            rm -f \
+              "$APPSTORE_KEY_PATH" \
+              2>/dev/null || true
+          fi
+
+          echo "Cleanup completed."
