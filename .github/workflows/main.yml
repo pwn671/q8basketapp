@@ -37,7 +37,7 @@ jobs:
 
 
       # ============================================================
-      # 3. INSTALL DEPENDENCIES
+      # 3. INSTALL NPM DEPENDENCIES
       # ============================================================
 
       - name: Install dependencies
@@ -53,7 +53,7 @@ jobs:
 
 
       # ============================================================
-      # 5. SYNC CAPACITOR
+      # 5. SYNC CAPACITOR IOS
       # ============================================================
 
       - name: Sync Capacitor iOS
@@ -61,7 +61,7 @@ jobs:
 
 
       # ============================================================
-      # 6. COCOAPODS
+      # 6. INSTALL COCOAPODS
       # ============================================================
 
       - name: Install CocoaPods
@@ -99,6 +99,8 @@ jobs:
             "$KEYCHAIN_PATH"
 
           security default-keychain -s "$KEYCHAIN_PATH"
+
+          echo "Signing keychain created."
 
 
       # ============================================================
@@ -193,7 +195,57 @@ jobs:
 
 
       # ============================================================
-      # 12. INSTALL PROVISIONING PROFILE
+      # 12. READ PROVISIONING PROFILE
+      # ============================================================
+
+      - name: Read provisioning profile
+        run: |
+          set -e
+
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+
+          security cms \
+            -D \
+            -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
+            > "$PROFILE_PLIST"
+
+          PROFILE_UUID=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :UUID" \
+              "$PROFILE_PLIST"
+          )
+
+          PROFILE_NAME_FROM_FILE=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :Name" \
+              "$PROFILE_PLIST"
+          )
+
+          PROFILE_APP_ID=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :Entitlements:application-identifier" \
+              "$PROFILE_PLIST"
+          )
+
+          TEAM_ID_FROM_PROFILE=$(
+            /usr/libexec/PlistBuddy \
+              -c "Print :Entitlements:com.apple.developer.team-identifier" \
+              "$PROFILE_PLIST"
+          )
+
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+
+          echo "=========================================="
+          echo "PROVISIONING PROFILE"
+          echo "=========================================="
+          echo "Name: $PROFILE_NAME_FROM_FILE"
+          echo "UUID: $PROFILE_UUID"
+          echo "Application ID: $PROFILE_APP_ID"
+          echo "Team ID: $TEAM_ID_FROM_PROFILE"
+
+
+      # ============================================================
+      # 13. INSTALL PROVISIONING PROFILE
       # ============================================================
 
       - name: Install provisioning profile
@@ -204,38 +256,15 @@ jobs:
 
           mkdir -p "$PROFILE_DIR"
 
-          UUID=$(
-            security cms -D \
-              -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
-              | plutil -extract UUID raw -
-          )
-
-          PROFILE_NAME=$(
-            security cms -D \
-              -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
-              | plutil -extract Name raw -
-          )
-
-          PROFILE_APP_ID=$(
-            security cms -D \
-              -i "$RUNNER_TEMP/Q8Basket.mobileprovision" \
-              | plutil -extract Entitlements.application-identifier raw -
-          )
-
-          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
-
           cp \
             "$RUNNER_TEMP/Q8Basket.mobileprovision" \
-            "$PROFILE_DIR/$UUID.mobileprovision"
+            "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
 
-          echo "Installed provisioning profile:"
-          echo "Name: $PROFILE_NAME"
-          echo "UUID: $UUID"
-          echo "Application Identifier: $PROFILE_APP_ID"
+          echo "Provisioning profile installed."
 
 
       # ============================================================
-      # 13. CONFIGURE Q8BASKET SIGNING
+      # 14. CONFIGURE ONLY Q8BASKET TARGET SIGNING
       # ============================================================
 
       - name: Configure Q8Basket signing
@@ -252,26 +281,41 @@ jobs:
             t.name == 'Q8Basket'
           end
 
-          abort 'Q8Basket target not found' unless target
+          abort 'ERROR: Q8Basket target not found' unless target
 
           target.build_configurations.each do |config|
+
             next unless config.name == 'Release'
 
             config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
-            config.build_settings['DEVELOPMENT_TEAM'] = ENV['DEVELOPMENT_TEAM']
-            config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = ENV['BUNDLE_ID']
-            config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
-            config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ENV['PROFILE_NAME']
+
+            config.build_settings['DEVELOPMENT_TEAM'] =
+              ENV['DEVELOPMENT_TEAM']
+
+            config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] =
+              ENV['BUNDLE_ID']
+
+            config.build_settings['CODE_SIGN_IDENTITY'] =
+              'Apple Distribution'
+
+            config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] =
+              ENV['PROFILE_NAME']
+
+            config.build_settings['PROVISIONING_PROFILE'] =
+              ENV['PROFILE_UUID']
+
+            puts "Configured Q8Basket Release signing."
+
           end
 
           project.save
 
-          puts 'Q8Basket signing configured.'
+          puts "Q8Basket signing configuration saved."
           RUBY
 
 
       # ============================================================
-      # 14. DISABLE COCOAPODS SIGNING
+      # 15. DISABLE COCOAPODS / FRAMEWORK SIGNING
       # ============================================================
 
       - name: Disable signing for CocoaPods
@@ -279,41 +323,48 @@ jobs:
         run: |
           set -e
 
+          if [ ! -f "Pods/Pods.xcodeproj/project.pbxproj" ]; then
+            echo "Pods project not found."
+            exit 1
+          fi
+
           ruby <<'RUBY'
           require 'xcodeproj'
 
           project = Xcodeproj::Project.open('Pods/Pods.xcodeproj')
 
           project.targets.each do |target|
+
             target.build_configurations.each do |config|
 
               config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
               config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-              config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
+              config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
               config.build_settings['CODE_SIGN_IDENTITY'] = ''
               config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ''
               config.build_settings['PROVISIONING_PROFILE'] = ''
 
             end
+
           end
 
           project.save
 
-          puts 'CocoaPods signing disabled.'
+          puts "CocoaPods/framework signing disabled."
           RUBY
 
 
       # ============================================================
-      # 15. VERIFY XCODE SCHEME
+      # 16. VERIFY XCODE PROJECT
       # ============================================================
 
-      - name: Verify Q8Basket scheme
+      - name: Verify Xcode project
         working-directory: ios/App
         run: |
           set -e
 
           echo "=========================================="
-          echo "XCODE PROJECT"
+          echo "XCODE PROJECT TARGETS"
           echo "=========================================="
 
           xcodebuild \
@@ -321,24 +372,24 @@ jobs:
             -list
 
           echo "=========================================="
-          echo "BUILD SETTINGS"
+          echo "Q8BASKET BUILD SETTINGS"
           echo "=========================================="
 
           xcodebuild \
             -workspace App.xcworkspace \
-            -scheme Q8Basket \
+            -scheme "$SCHEME_NAME" \
             -configuration Release \
             -showBuildSettings \
             > "$RUNNER_TEMP/build-settings.txt"
 
           grep -E \
-            'PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE_SPECIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION' \
+            'PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE_SPECIFIER|PROVISIONING_PROFILE|MARKETING_VERSION|CURRENT_PROJECT_VERSION' \
             "$RUNNER_TEMP/build-settings.txt" \
             || true
 
 
       # ============================================================
-      # 16. BUILD IOS ARCHIVE
+      # 17. BUILD IOS ARCHIVE
       # ============================================================
 
       - name: Build iOS Archive
@@ -354,26 +405,63 @@ jobs:
 
           xcodebuild \
             -workspace App.xcworkspace \
-            -scheme Q8Basket \
+            -scheme "$SCHEME_NAME" \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$ARCHIVE_PATH" \
-            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
-            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             clean archive
 
           test -d "$ARCHIVE_PATH"
 
           echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
 
-          echo "Archive created successfully."
+          echo "=========================================="
+          echo "ARCHIVE CREATED SUCCESSFULLY"
+          echo "=========================================="
 
 
       # ============================================================
-      # 17. CREATE EXPORT OPTIONS
+      # 18. SHOW ARCHIVE SIGNING INFORMATION
+      # ============================================================
+
+      - name: Verify archive
+        run: |
+          set -e
+
+          echo "=========================================="
+          echo "ARCHIVE INFO"
+          echo "=========================================="
+
+          APP_PATH=$(find \
+            "$ARCHIVE_PATH/Products/Applications" \
+            -maxdepth 1 \
+            -name "*.app" \
+            -type d \
+            | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: Application not found in archive."
+            exit 1
+          fi
+
+          echo "Application:"
+          echo "$APP_PATH"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            "$APP_PATH/Info.plist"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleShortVersionString" \
+            "$APP_PATH/Info.plist"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleVersion" \
+            "$APP_PATH/Info.plist"
+
+
+      # ============================================================
+      # 19. CREATE EXPORT OPTIONS
       # ============================================================
 
       - name: Create ExportOptions
@@ -388,7 +476,7 @@ jobs:
           <dict>
 
             <key>method</key>
-            <string>app-store</string>
+            <string>app-store-connect</string>
 
             <key>destination</key>
             <string>export</string>
@@ -398,6 +486,9 @@ jobs:
 
             <key>teamID</key>
             <string>5J9VJRYZMN</string>
+
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
 
             <key>provisioningProfiles</key>
             <dict>
@@ -415,11 +506,15 @@ jobs:
           </plist>
           PLIST
 
-          echo "ExportOptions.plist created."
+          echo "=========================================="
+          echo "EXPORT OPTIONS CREATED"
+          echo "=========================================="
+
+          cat "$RUNNER_TEMP/ExportOptions.plist"
 
 
       # ============================================================
-      # 18. EXPORT IPA
+      # 20. EXPORT IPA
       # ============================================================
 
       - name: Export IPA
@@ -428,6 +523,7 @@ jobs:
 
           EXPORT_PATH="$RUNNER_TEMP/export"
 
+          rm -rf "$EXPORT_PATH"
           mkdir -p "$EXPORT_PATH"
 
           echo "=========================================="
@@ -440,7 +536,11 @@ jobs:
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
-          IPA_FILE=$(find "$EXPORT_PATH" -name "*.ipa" -type f | head -1)
+          IPA_FILE=$(find \
+            "$EXPORT_PATH" \
+            -name "*.ipa" \
+            -type f \
+            | head -1)
 
           if [ -z "$IPA_FILE" ]; then
             echo "ERROR: IPA was not created."
@@ -457,7 +557,7 @@ jobs:
 
 
       # ============================================================
-      # 19. VERIFY IPA VERSION / BUILD
+      # 21. VERIFY IPA VERSION / BUILD
       # ============================================================
 
       - name: Verify IPA version
@@ -468,63 +568,74 @@ jobs:
           echo "VERIFYING IPA"
           echo "=========================================="
 
-          rm -rf "$RUNNER_TEMP/ipa-check"
+          IPA_CHECK="$RUNNER_TEMP/ipa-check"
 
-          mkdir -p "$RUNNER_TEMP/ipa-check"
+          rm -rf "$IPA_CHECK"
+          mkdir -p "$IPA_CHECK"
 
           unzip -q \
             "$IPA_FILE" \
-            -d "$RUNNER_TEMP/ipa-check"
+            -d "$IPA_CHECK"
 
-          APP_PATH=$(find "$RUNNER_TEMP/ipa-check/Payload" -maxdepth 1 -name "*.app" -type d | head -1)
+          APP_PATH=$(find \
+            "$IPA_CHECK/Payload" \
+            -maxdepth 1 \
+            -name "*.app" \
+            -type d \
+            | head -1)
 
           if [ -z "$APP_PATH" ]; then
             echo "ERROR: App not found inside IPA."
             exit 1
           fi
 
-          BUNDLE_ID=$(
+          IPA_BUNDLE_ID=$(
             /usr/libexec/PlistBuddy \
               -c "Print :CFBundleIdentifier" \
               "$APP_PATH/Info.plist"
           )
 
-          VERSION=$(
+          IPA_VERSION=$(
             /usr/libexec/PlistBuddy \
               -c "Print :CFBundleShortVersionString" \
               "$APP_PATH/Info.plist"
           )
 
-          BUILD=$(
+          IPA_BUILD=$(
             /usr/libexec/PlistBuddy \
               -c "Print :CFBundleVersion" \
               "$APP_PATH/Info.plist"
           )
 
-          echo "Bundle ID : $BUNDLE_ID"
-          echo "Version   : $VERSION"
-          echo "Build     : $BUILD"
+          echo "Bundle ID : $IPA_BUNDLE_ID"
+          echo "Version   : $IPA_VERSION"
+          echo "Build     : $IPA_BUILD"
 
-          if [ "$BUNDLE_ID" != "com.q8basket.app" ]; then
+          if [ "$IPA_BUNDLE_ID" != "com.q8basket.app" ]; then
             echo "ERROR: Wrong Bundle ID."
             exit 1
           fi
 
-          if [ "$VERSION" != "2.4.0" ]; then
-            echo "ERROR: Expected version 2.4.0 but found $VERSION"
+          if [ "$IPA_VERSION" != "2.4.0" ]; then
+            echo "ERROR: Expected version 2.4.0."
+            echo "Found version: $IPA_VERSION"
             exit 1
           fi
 
-          if [ "$BUILD" != "4" ]; then
-            echo "ERROR: Expected build 4 but found $BUILD"
+          if [ "$IPA_BUILD" != "4" ]; then
+            echo "ERROR: Expected build 4."
+            echo "Found build: $IPA_BUILD"
             exit 1
           fi
 
-          echo "IPA version verification successful."
+          echo "=========================================="
+          echo "IPA VERSION VERIFIED"
+          echo "2.4.0 (Build 4)"
+          echo "=========================================="
 
 
       # ============================================================
-      # 20. UPLOAD IPA AS GITHUB ARTIFACT
+      # 22. UPLOAD IPA ARTIFACT TO GITHUB
       # ============================================================
 
       - name: Upload IPA artifact
@@ -536,7 +647,7 @@ jobs:
 
 
       # ============================================================
-      # 21. PREPARE APP STORE CONNECT API KEY
+      # 23. PREPARE APP STORE CONNECT API KEY
       # ============================================================
 
       - name: Prepare App Store Connect API key
@@ -564,7 +675,7 @@ jobs:
 
 
       # ============================================================
-      # 22. UPLOAD IPA TO APP STORE CONNECT
+      # 24. UPLOAD IPA TO APP STORE CONNECT
       # ============================================================
 
       - name: Upload IPA to App Store Connect
@@ -575,20 +686,16 @@ jobs:
           set -e
 
           echo "=========================================="
-          echo "UPLOADING Q8BASKET TO APP STORE CONNECT"
+          echo "UPLOADING IPA TO APP STORE CONNECT"
           echo "=========================================="
-
-          echo "IPA:"
-          echo "$IPA_FILE"
-
-          echo "Key ID:"
-          echo "$APPSTORE_KEY_ID"
-
-          echo "Issuer:"
-          echo "$APPSTORE_ISSUER_ID"
 
           test -f "$IPA_FILE"
           test -f "$APPSTORE_KEY_PATH"
+
+          echo "IPA found:"
+          ls -lh "$IPA_FILE"
+
+          echo "Uploading..."
 
           xcrun altool \
             --upload-app \
@@ -604,13 +711,15 @@ jobs:
 
 
       # ============================================================
-      # 23. CLEANUP
+      # 25. CLEANUP
       # ============================================================
 
       - name: Cleanup
         if: always()
         run: |
           set +e
+
+          echo "Cleaning up..."
 
           if [ -n "$KEYCHAIN_PATH" ]; then
             security delete-keychain \
@@ -623,5 +732,12 @@ jobs:
               "$APPSTORE_KEY_PATH" \
               2>/dev/null || true
           fi
+
+          rm -f \
+            "$RUNNER_TEMP/distribution.p12" \
+            "$RUNNER_TEMP/Q8Basket.mobileprovision" \
+            "$RUNNER_TEMP/profile.plist" \
+            "$RUNNER_TEMP/ExportOptions.plist" \
+            2>/dev/null || true
 
           echo "Cleanup completed."
