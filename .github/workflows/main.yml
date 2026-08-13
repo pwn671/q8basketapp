@@ -2,9 +2,6 @@ name: Build Q8Basket iOS
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   ios-build:
@@ -23,9 +20,11 @@ jobs:
 
       PROFILE_NAME: Q8Basket AppStore Distribution
 
-      P12_BASE64: ${{ secrets.P12_BASE64 }}
-      P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-      IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+      XCODE_CONTAINER: workspace
+
+      # Keychain password is generated during the build.
+      # No KEYCHAIN_PASSWORD GitHub secret is required.
+      KEYCHAIN_PATH: ${{ runner.temp }}/q8basket-build.keychain-db
 
     steps:
 
@@ -35,6 +34,7 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
 
       # ============================================================
       # 2. SETUP NODE
@@ -46,8 +46,9 @@ jobs:
           node-version: 20
           cache: npm
 
+
       # ============================================================
-      # 3. INSTALL DEPENDENCIES
+      # 3. INSTALL NPM DEPENDENCIES
       # ============================================================
 
       - name: Install dependencies
@@ -56,48 +57,49 @@ jobs:
 
           echo "Installing npm dependencies..."
 
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          npm ci
+
 
       # ============================================================
       # 4. BUILD WEB APP
       # ============================================================
 
       - name: Build web app
+        env:
+          VITE_API_BASE_URL: https://admin.q8basket.com/api
         run: |
           set -e
 
-          echo "Building Vite application..."
+          echo "======================================"
+          echo "BUILDING WEB APP"
+          echo "======================================"
 
           npm run build
 
-          echo "Build completed."
+          echo "Web build completed."
 
           if [ ! -d "dist" ]; then
-            echo "ERROR: dist directory was not created."
+            echo "ERROR: dist folder was not created."
             exit 1
           fi
 
           ls -lah dist
 
+
       # ============================================================
-      # 5. CAPACITOR SYNC
+      # 5. CAPACITOR IOS SYNC
       # ============================================================
 
       - name: Sync Capacitor iOS
         run: |
           set -e
 
-          echo "Syncing Capacitor iOS..."
+          echo "======================================"
+          echo "SYNCING CAPACITOR IOS"
+          echo "======================================"
 
           npx cap sync ios
 
-          echo "Capacitor iOS sync completed."
-
-          ls -lah ios
 
       # ============================================================
       # 6. INSTALL COCOAPODS
@@ -108,134 +110,27 @@ jobs:
         run: |
           set -e
 
-          echo "Installing CocoaPods..."
-
-          if [ -f Podfile ]; then
-            pod install --repo-update
-          else
-            echo "No Podfile found."
-          fi
-
-      # ============================================================
-      # 7. FIND XCODE PROJECT
-      # ============================================================
-
-      - name: Find Xcode project
-        working-directory: ios/App
-        run: |
-          set -e
-
           echo "======================================"
-          echo "XCODE FILES"
+          echo "INSTALLING COCOAPODS"
           echo "======================================"
 
-          find . -maxdepth 2 \
-            \( -name "*.xcodeproj" -o -name "*.xcworkspace" \) \
-            -print
+          pod install --repo-update
 
-          echo "======================================"
-
-          if [ -f "App.xcworkspace/contents.xcworkspacedata" ]; then
-            echo "Using App.xcworkspace"
-            echo "XCODE_CONTAINER=workspace" >> "$GITHUB_ENV"
-          elif [ -d "App.xcodeproj" ]; then
-            echo "Using App.xcodeproj"
-            echo "XCODE_CONTAINER=project" >> "$GITHUB_ENV"
-          else
-            echo "ERROR: App.xcodeproj or App.xcworkspace not found."
+          if [ ! -f "App.xcworkspace/contents.xcworkspacedata" ]; then
+            echo "ERROR: App.xcworkspace was not created."
             exit 1
           fi
 
-      # ============================================================
-      # 8. SHOW XCODE TARGETS AND SCHEMES
-      # ============================================================
-
-      - name: Check Xcode project
-        working-directory: ios/App
-        run: |
-          set -e
-
-          echo "======================================"
-          echo "XCODE PROJECT INFORMATION"
-          echo "======================================"
-
-          if [ "$XCODE_CONTAINER" = "workspace" ]; then
-
-            xcodebuild \
-              -workspace App.xcworkspace \
-              -list
-
-          else
-
-            xcodebuild \
-              -project App.xcodeproj \
-              -list
-
-          fi
-
-          echo "======================================"
-
-      # ============================================================
-      # 9. DECODE P12
-      # ============================================================
-
-      - name: Decode P12
-        shell: bash
-        run: |
-          set -e
-
-          echo "Decoding P12..."
-
-          if [ -z "$P12_BASE64" ]; then
-            echo "ERROR: P12_BASE64 secret is empty."
+          if [ ! -d "Pods" ]; then
+            echo "ERROR: Pods directory was not created."
             exit 1
           fi
 
-          printf '%s' "$P12_BASE64" \
-            | openssl base64 -A -d \
-            > "$RUNNER_TEMP/distribution.p12"
+          echo "CocoaPods installation completed."
 
-          echo "P12 created:"
-          ls -lh "$RUNNER_TEMP/distribution.p12"
-
-          FILE_SIZE=$(stat -f%z "$RUNNER_TEMP/distribution.p12")
-
-          echo "P12 size: $FILE_SIZE bytes"
-
-          if [ "$FILE_SIZE" -lt 1000 ]; then
-            echo "ERROR: P12 file is too small."
-            exit 1
-          fi
 
       # ============================================================
-      # 10. VERIFY P12 PASSWORD
-      # ============================================================
-
-      - name: Verify P12
-        shell: bash
-        run: |
-          set -e
-
-          echo "Verifying P12..."
-
-          if [ -z "$P12_PASSWORD" ]; then
-            echo "ERROR: P12_PASSWORD secret is empty."
-            exit 1
-          fi
-
-          openssl pkcs12 \
-            -info \
-            -in "$RUNNER_TEMP/distribution.p12" \
-            -noout \
-            -passin pass:"$P12_PASSWORD" \
-            -legacy
-
-          echo "======================================"
-          echo "P12 verification successful."
-          echo "======================================"
-
-      # ============================================================
-      # 11. CREATE TEMP KEYCHAIN
+      # 7. CREATE SIGNING KEYCHAIN
       # ============================================================
 
       - name: Create signing keychain
@@ -245,14 +140,15 @@ jobs:
 
           KEYCHAIN_PATH="$RUNNER_TEMP/q8basket-build.keychain-db"
 
-          # This password is ONLY for the temporary CI keychain.
-          # It is NOT a GitHub Secret.
-          KEYCHAIN_PASSWORD="q8basket-ci-keychain"
+          # Generate a temporary password.
+          # No GitHub KEYCHAIN_PASSWORD secret is required.
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
 
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
 
-          rm -f "$KEYCHAIN_PATH"
+          echo "Creating temporary keychain..."
+
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
 
           security create-keychain \
             -p "$KEYCHAIN_PASSWORD" \
@@ -266,171 +162,159 @@ jobs:
             -p "$KEYCHAIN_PASSWORD" \
             "$KEYCHAIN_PATH"
 
-          security list-keychains \
-            -d user \
-            -s "$KEYCHAIN_PATH"
+          # Make sure the temporary keychain is available.
+          security list-keychains -d user -s \
+            "$KEYCHAIN_PATH" \
+            "$HOME/Library/Keychains/login.keychain-db"
 
-          security default-keychain \
-            -s "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
 
-          echo "Temporary keychain created."
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+          echo "Keychain created successfully."
+
 
       # ============================================================
-      # 12. IMPORT APPLE DISTRIBUTION CERTIFICATE
+      # 8. DECODE P12
+      # ============================================================
+
+      - name: Decode P12 certificate
+        shell: bash
+        env:
+          P12_BASE64: ${{ secrets.P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "DECODING P12"
+          echo "======================================"
+
+          P12_PATH="$RUNNER_TEMP/distribution.p12"
+
+          if [ -z "$P12_BASE64" ]; then
+            echo "ERROR: P12_BASE64 secret is empty."
+            exit 1
+          fi
+
+          if [ -z "$P12_PASSWORD" ]; then
+            echo "ERROR: P12_PASSWORD secret is empty."
+            exit 1
+          fi
+
+          printf '%s' "$P12_BASE64" \
+            | base64 --decode > "$P12_PATH"
+
+          if [ ! -s "$P12_PATH" ]; then
+            echo "ERROR: distribution.p12 is empty."
+            exit 1
+          fi
+
+          echo "P12 created:"
+          ls -lh "$P12_PATH"
+
+          echo "P12_PATH=$P12_PATH" >> "$GITHUB_ENV"
+
+
+      # ============================================================
+      # 9. VERIFY P12 PASSWORD
+      # ============================================================
+
+      - name: Verify P12 password
+        shell: bash
+        env:
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "VERIFYING P12"
+          echo "======================================"
+
+          openssl pkcs12 \
+            -info \
+            -in "$P12_PATH" \
+            -noout \
+            -passin env:P12_PASSWORD \
+            -legacy
+
+          echo "P12 password verification successful."
+
+
+      # ============================================================
+      # 10. IMPORT P12 INTO KEYCHAIN
       # ============================================================
 
       - name: Install signing certificate
         shell: bash
+        env:
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
         run: |
           set -e
 
-          echo "Importing Apple Distribution certificate..."
+          echo "======================================"
+          echo "INSTALLING SIGNING CERTIFICATE"
+          echo "======================================"
 
-          security import "$RUNNER_TEMP/distribution.p12" \
+          security import "$P12_PATH" \
             -k "$KEYCHAIN_PATH" \
             -P "$P12_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/security
 
-          echo "Certificate imported."
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_PATH"
 
-          echo "======================================"
-          echo "Available signing identities"
-          echo "======================================"
+          echo "Signing certificate installed."
+
+          echo "Available signing identities:"
 
           security find-identity \
             -v \
             -p codesigning \
             "$KEYCHAIN_PATH"
 
-          echo "======================================"
 
       # ============================================================
-      # 13. CREATE PROVISIONING PROFILE
+      # 11. DECODE PROVISIONING PROFILE
       # ============================================================
 
       - name: Decode provisioning profile
         shell: bash
+        env:
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
         run: |
           set -e
 
-          echo "Decoding provisioning profile..."
+          echo "======================================"
+          echo "DECODING PROVISIONING PROFILE"
+          echo "======================================"
+
+          PROFILE_PATH="$RUNNER_TEMP/Q8Basket_AppStore_Distribution.mobileprovision"
 
           if [ -z "$IOS_PROVISION_PROFILE_BASE64" ]; then
             echo "ERROR: IOS_PROVISION_PROFILE_BASE64 secret is empty."
             exit 1
           fi
 
-          PROFILE_PATH="$RUNNER_TEMP/Q8Basket_AppStore_Distribution.mobileprovision"
-
           printf '%s' "$IOS_PROVISION_PROFILE_BASE64" \
-            | openssl base64 -A -d \
-            > "$PROFILE_PATH"
+            | base64 --decode > "$PROFILE_PATH"
 
-          echo "Provisioning profile:"
-          ls -lh "$PROFILE_PATH"
-
-          PROFILE_SIZE=$(stat -f%z "$PROFILE_PATH")
-
-          if [ "$PROFILE_SIZE" -lt 1000 ]; then
-            echo "ERROR: Provisioning profile is invalid or empty."
+          if [ ! -s "$PROFILE_PATH" ]; then
+            echo "ERROR: Provisioning profile is empty."
             exit 1
           fi
 
           echo "PROFILE_PATH=$PROFILE_PATH" >> "$GITHUB_ENV"
 
-      # ============================================================
-      # 14. READ PROVISIONING PROFILE
-      # ============================================================
+          ls -lh "$PROFILE_PATH"
 
-      - name: Read provisioning profile
-        shell: bash
-        run: |
-          set -e
-
-          echo "Reading provisioning profile..."
-
-          security cms \
-            -D \
-            -i "$PROFILE_PATH" \
-            > "$RUNNER_TEMP/profile.plist"
-
-          echo "======================================"
-          echo "PROFILE NAME"
-          echo "======================================"
-
-          /usr/libexec/PlistBuddy \
-            -c "Print :Name" \
-            "$RUNNER_TEMP/profile.plist"
-
-          echo "======================================"
-          echo "APP ID"
-          echo "======================================"
-
-          /usr/libexec/PlistBuddy \
-            -c "Print :Entitlements:application-identifier" \
-            "$RUNNER_TEMP/profile.plist"
-
-          echo "======================================"
-          echo "TEAM ID"
-          echo "======================================"
-
-          /usr/libexec/PlistBuddy \
-            -c "Print :TeamIdentifier:0" \
-            "$RUNNER_TEMP/profile.plist" || true
-
-          echo "======================================"
-          echo "UUID"
-          echo "======================================"
-
-          PROFILE_UUID=$(
-            /usr/libexec/PlistBuddy \
-              -c "Print :UUID" \
-              "$RUNNER_TEMP/profile.plist"
-          )
-
-          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
-
-          echo "Provisioning profile UUID: $PROFILE_UUID"
 
       # ============================================================
-      # 15. CHECK BUNDLE ID
-      # ============================================================
-
-      - name: Validate provisioning profile
-        shell: bash
-        run: |
-          set -e
-
-          echo "Validating provisioning profile..."
-
-          PROFILE_APP_ID=$(
-            /usr/libexec/PlistBuddy \
-              -c "Print :Entitlements:application-identifier" \
-              "$RUNNER_TEMP/profile.plist"
-          )
-
-          EXPECTED_APP_ID="$DEVELOPMENT_TEAM.$BUNDLE_ID"
-
-          echo "Profile App ID : $PROFILE_APP_ID"
-          echo "Expected App ID: $EXPECTED_APP_ID"
-
-          if [ "$PROFILE_APP_ID" != "$EXPECTED_APP_ID" ]; then
-            echo ""
-            echo "ERROR: Provisioning profile does not match bundle ID."
-            echo ""
-            echo "Expected:"
-            echo "$EXPECTED_APP_ID"
-            echo ""
-            echo "Got:"
-            echo "$PROFILE_APP_ID"
-            exit 1
-          fi
-
-          echo "Provisioning profile matches bundle ID."
-
-      # ============================================================
-      # 16. INSTALL PROVISIONING PROFILE
+      # 12. INSTALL PROVISIONING PROFILE
       # ============================================================
 
       - name: Install provisioning profile
@@ -438,19 +322,233 @@ jobs:
         run: |
           set -e
 
+          echo "======================================"
+          echo "INSTALLING PROVISIONING PROFILE"
+          echo "======================================"
+
           PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
 
           mkdir -p "$PROFILE_DIR"
 
+          # Read UUID from provisioning profile.
+          PROFILE_UUID="$(
+            security cms -D -i "$PROFILE_PATH" \
+              | plutil -extract UUID raw -
+          )"
+
+          if [ -z "$PROFILE_UUID" ]; then
+            echo "ERROR: Could not read provisioning profile UUID."
+            exit 1
+          fi
+
           cp "$PROFILE_PATH" \
             "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
 
-          echo "Provisioning profile installed."
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
 
-          ls -lah "$PROFILE_DIR"
+          echo "Provisioning profile installed:"
+          echo "$PROFILE_UUID"
+
 
       # ============================================================
-      # 17. VERIFY XCODE SCHEME
+      # 13. READ PROVISIONING PROFILE
+      # ============================================================
+
+      - name: Read provisioning profile
+        shell: bash
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "PROVISIONING PROFILE INFORMATION"
+          echo "======================================"
+
+          security cms \
+            -D \
+            -i "$PROFILE_PATH" \
+            > "$RUNNER_TEMP/profile.plist"
+
+          echo "Name:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :Name" \
+            "$RUNNER_TEMP/profile.plist"
+
+          echo "UUID:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :UUID" \
+            "$RUNNER_TEMP/profile.plist"
+
+          echo "Team:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :TeamIdentifier:0" \
+            "$RUNNER_TEMP/profile.plist"
+
+          echo "Bundle ID:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :Entitlements:application-identifier" \
+            "$RUNNER_TEMP/profile.plist"
+
+
+      # ============================================================
+      # 14. CHECK XCODE PROJECT
+      # ============================================================
+
+      - name: Check Xcode project
+        working-directory: ios/App
+        shell: bash
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "CHECKING XCODE PROJECT"
+          echo "======================================"
+
+          xcodebuild \
+            -project App.xcodeproj \
+            -list
+
+          echo ""
+          echo "Workspace:"
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -list
+
+
+      # ============================================================
+      # 15. INSTALL XCODEPROJ GEM
+      # ============================================================
+
+      - name: Install xcodeproj gem
+        run: |
+          set -e
+
+          echo "Installing xcodeproj..."
+
+          gem install xcodeproj --no-document
+
+          ruby -e "require 'xcodeproj'; puts Xcodeproj::VERSION"
+
+
+      # ============================================================
+      # 16. FIX APP + PODS SIGNING
+      # ============================================================
+
+      - name: Configure iOS code signing
+        working-directory: ios/App
+        shell: bash
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "CONFIGURING IOS CODE SIGNING"
+          echo "======================================"
+
+          ruby <<'RUBY'
+
+          require 'xcodeproj'
+
+          development_team = ENV['DEVELOPMENT_TEAM']
+          bundle_id = ENV['BUNDLE_ID']
+          profile_name = ENV['PROFILE_NAME']
+
+          app_project_path = 'App.xcodeproj'
+          pods_project_path = 'Pods/Pods.xcodeproj'
+
+          puts ""
+          puts "======================================"
+          puts "CONFIGURING APP PROJECT"
+          puts "======================================"
+
+          app_project = Xcodeproj::Project.open(app_project_path)
+
+          app_target = app_project.targets.find do |target|
+            target.name == 'Q8Basket'
+          end
+
+          unless app_target
+            abort "ERROR: Q8Basket target was not found."
+          end
+
+          puts "Found target: #{app_target.name}"
+
+          app_target.build_configurations.each do |config|
+
+            if config.name == 'Release'
+
+              settings = config.build_settings
+
+              settings['CODE_SIGN_STYLE'] = 'Manual'
+              settings['DEVELOPMENT_TEAM'] = development_team
+              settings['PRODUCT_BUNDLE_IDENTIFIER'] = bundle_id
+              settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+              settings['PROVISIONING_PROFILE_SPECIFIER'] = profile_name
+
+              puts ""
+              puts "Q8Basket Release signing:"
+              puts "CODE_SIGN_STYLE = #{settings['CODE_SIGN_STYLE']}"
+              puts "DEVELOPMENT_TEAM = #{settings['DEVELOPMENT_TEAM']}"
+              puts "PRODUCT_BUNDLE_IDENTIFIER = #{settings['PRODUCT_BUNDLE_IDENTIFIER']}"
+              puts "CODE_SIGN_IDENTITY = #{settings['CODE_SIGN_IDENTITY']}"
+              puts "PROVISIONING_PROFILE_SPECIFIER = #{settings['PROVISIONING_PROFILE_SPECIFIER']}"
+
+            end
+
+          end
+
+          app_project.save
+
+          puts ""
+          puts "======================================"
+          puts "CONFIGURING PODS"
+          puts "======================================"
+
+          unless File.exist?(pods_project_path)
+            abort "ERROR: Pods.xcodeproj not found."
+          end
+
+          pods_project = Xcodeproj::Project.open(pods_project_path)
+
+          pods_project.targets.each do |target|
+
+            target.build_configurations.each do |config|
+
+              settings = config.build_settings
+
+              # ----------------------------------------------------
+              # IMPORTANT
+              #
+              # CocoaPods targets must NOT use the application's
+              # provisioning profile.
+              # ----------------------------------------------------
+
+              settings['CODE_SIGN_STYLE'] = 'Automatic'
+
+              settings['PROVISIONING_PROFILE_SPECIFIER'] = ''
+              settings['PROVISIONING_PROFILE'] = ''
+
+              settings['CODE_SIGN_IDENTITY'] = ''
+
+              settings['CODE_SIGNING_ALLOWED'] = 'NO'
+              settings['CODE_SIGNING_REQUIRED'] = 'NO'
+
+            end
+
+            puts "Disabled signing for Pod: #{target.name}"
+
+          end
+
+          pods_project.save
+
+          puts ""
+          puts "======================================"
+          puts "SIGNING CONFIGURATION COMPLETE"
+          puts "======================================"
+
+          RUBY
+
+
+      # ============================================================
+      # 17. VERIFY Q8BASKET SCHEME
       # ============================================================
 
       - name: Verify Q8Basket scheme
@@ -459,72 +557,35 @@ jobs:
         run: |
           set -e
 
-          echo "Checking Q8Basket scheme..."
+          echo "======================================"
+          echo "VERIFYING Q8BASKET SCHEME"
+          echo "======================================"
 
-          if [ "$XCODE_CONTAINER" = "workspace" ]; then
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -list
 
-            xcodebuild \
-              -workspace App.xcworkspace \
-              -list
+          echo ""
+          echo "Checking scheme..."
 
-          else
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme Q8Basket \
+            -showBuildSettings \
+            -configuration Release \
+            > "$RUNNER_TEMP/q8basket-build-settings.txt"
 
-            xcodebuild \
-              -project App.xcodeproj \
-              -list
+          grep -E \
+            "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE_SPECIFIER" \
+            "$RUNNER_TEMP/q8basket-build-settings.txt" \
+            || true
 
-          fi
+          echo ""
+          echo "Q8Basket scheme verification completed."
 
-          echo "Expected scheme: $SCHEME_NAME"
-          echo "Expected target: $TARGET_NAME"
-
-      # ============================================================
-      # 18. CREATE EXPORT OPTIONS
-      # ============================================================
-
-      - name: Create ExportOptions.plist
-        shell: bash
-        run: |
-          set -e
-
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>app-store</string>
-
-              <key>signingStyle</key>
-              <string>manual</string>
-
-              <key>teamID</key>
-              <string>${DEVELOPMENT_TEAM}</string>
-
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>${BUNDLE_ID}</key>
-                  <string>${PROFILE_NAME}</string>
-              </dict>
-
-              <key>destination</key>
-              <string>export</string>
-
-              <key>uploadSymbols</key>
-              <true/>
-
-              <key>compileBitcode</key>
-              <false/>
-          </dict>
-          </plist>
-          EOF
-
-          echo "ExportOptions.plist created."
-
-          cat "$RUNNER_TEMP/ExportOptions.plist"
 
       # ============================================================
-      # 19. BUILD ARCHIVE
+      # 18. BUILD IOS ARCHIVE
       # ============================================================
 
       - name: Build iOS Archive
@@ -539,48 +600,49 @@ jobs:
           echo "BUILDING Q8BASKET ARCHIVE"
           echo "======================================"
 
-          if [ "$XCODE_CONTAINER" = "workspace" ]; then
+          echo "Workspace: App.xcworkspace"
+          echo "Scheme: Q8Basket"
+          echo "Configuration: Release"
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "Team: $DEVELOPMENT_TEAM"
 
-            xcodebuild \
-              -workspace App.xcworkspace \
-              -scheme "$SCHEME_NAME" \
-              -configuration Release \
-              -destination "generic/platform=iOS" \
-              -archivePath "$ARCHIVE_PATH" \
-              DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
-              PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="Apple Distribution" \
-              PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-              clean archive
+          # IMPORTANT:
+          #
+          # DO NOT pass:
+          # CODE_SIGN_STYLE
+          # CODE_SIGN_IDENTITY
+          # PROVISIONING_PROFILE_SPECIFIER
+          #
+          # on the xcodebuild command line.
+          #
+          # Those values previously propagated to CocoaPods.
+          # The app and Pods are now configured separately above.
 
-          else
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme Q8Basket \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$ARCHIVE_PATH" \
+            clean archive
 
-            xcodebuild \
-              -project App.xcodeproj \
-              -scheme "$SCHEME_NAME" \
-              -configuration Release \
-              -destination "generic/platform=iOS" \
-              -archivePath "$ARCHIVE_PATH" \
-              DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
-              PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="Apple Distribution" \
-              PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-              clean archive
-
-          fi
-
+          echo ""
           echo "======================================"
           echo "ARCHIVE CREATED"
           echo "======================================"
+
+          if [ ! -d "$ARCHIVE_PATH" ]; then
+            echo "ERROR: Archive was not created."
+            exit 1
+          fi
 
           ls -lah "$ARCHIVE_PATH"
 
           echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
 
+
       # ============================================================
-      # 20. VERIFY ARCHIVE
+      # 19. CHECK ARCHIVE
       # ============================================================
 
       - name: Check Archive
@@ -588,19 +650,80 @@ jobs:
         run: |
           set -e
 
-          echo "Checking archive..."
+          echo "======================================"
+          echo "CHECKING ARCHIVE"
+          echo "======================================"
 
           if [ ! -d "$ARCHIVE_PATH" ]; then
-            echo "ERROR: Archive was not created."
+            echo "ERROR: Archive does not exist."
             exit 1
           fi
 
           if [ ! -f "$ARCHIVE_PATH/Info.plist" ]; then
-            echo "ERROR: Archive Info.plist missing."
+            echo "ERROR: Archive Info.plist not found."
             exit 1
           fi
 
-          echo "Archive is valid."
+          echo "Archive:"
+          ls -lah "$ARCHIVE_PATH"
+
+          echo ""
+          echo "Archive application:"
+          find "$ARCHIVE_PATH/Products/Applications" \
+            -maxdepth 1 \
+            -type d \
+            -name "*.app" \
+            -print
+
+
+      # ============================================================
+      # 20. CREATE EXPORT OPTIONS
+      # ============================================================
+
+      - name: Create ExportOptions.plist
+        shell: bash
+        run: |
+          set -e
+
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+
+            <key>method</key>
+            <string>app-store</string>
+
+            <key>destination</key>
+            <string>export</string>
+
+            <key>signingStyle</key>
+            <string>manual</string>
+
+            <key>teamID</key>
+            <string>5J9VJRYZMN</string>
+
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.q8basket.app</key>
+              <string>Q8Basket AppStore Distribution</string>
+            </dict>
+
+            <key>stripSwiftSymbols</key>
+            <true/>
+
+            <key>compileBitcode</key>
+            <false/>
+
+          </dict>
+          </plist>
+          EOF
+
+          echo "ExportOptions.plist created."
+
+          cat "$RUNNER_TEMP/ExportOptions.plist"
+
 
       # ============================================================
       # 21. EXPORT IPA
@@ -611,30 +734,46 @@ jobs:
         run: |
           set -e
 
-          EXPORT_DIR="$RUNNER_TEMP/export"
+          EXPORT_PATH="$RUNNER_TEMP/export"
 
-          rm -rf "$EXPORT_DIR"
-          mkdir -p "$EXPORT_DIR"
+          rm -rf "$EXPORT_PATH"
 
-          echo "Exporting IPA..."
+          mkdir -p "$EXPORT_PATH"
+
+          echo "======================================"
+          echo "EXPORTING IPA"
+          echo "======================================"
 
           xcodebuild \
             -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
-            -exportPath "$EXPORT_DIR" \
+            -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
+          echo ""
           echo "======================================"
-          echo "EXPORT COMPLETE"
+          echo "IPA EXPORT COMPLETE"
           echo "======================================"
 
-          find "$EXPORT_DIR" \
+          find "$EXPORT_PATH" \
             -maxdepth 2 \
             -type f \
             -print
 
+          IPA_FILE="$(find "$EXPORT_PATH" -maxdepth 1 -name "*.ipa" -print -quit)"
+
+          if [ -z "$IPA_FILE" ]; then
+            echo "ERROR: IPA was not generated."
+            exit 1
+          fi
+
+          echo "IPA_FILE=$IPA_FILE" >> "$GITHUB_ENV"
+
+          ls -lh "$IPA_FILE"
+
+
       # ============================================================
-      # 22. FIND IPA
+      # 22. CHECK IPA
       # ============================================================
 
       - name: Check IPA
@@ -642,24 +781,26 @@ jobs:
         run: |
           set -e
 
-          IPA_FILE=$(find "$RUNNER_TEMP/export" -type f -name "*.ipa" | head -n 1)
+          echo "======================================"
+          echo "CHECKING IPA"
+          echo "======================================"
 
-          if [ -z "$IPA_FILE" ]; then
-            echo "ERROR: IPA was not generated."
+          if [ ! -f "$IPA_FILE" ]; then
+            echo "ERROR: IPA file does not exist."
             exit 1
           fi
 
-          echo "IPA found:"
-          echo "$IPA_FILE"
+          echo "IPA:"
+          ls -lh "$IPA_FILE"
 
-          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          echo ""
+          echo "IPA contents:"
 
-          cp "$IPA_FILE" \
-            "$GITHUB_WORKSPACE/artifacts/Q8Basket.ipa"
+          unzip -l "$IPA_FILE" \
+            | grep -E "Payload/.*\.app/" \
+            | head -20 \
+            || true
 
-          echo "IPA copied to artifacts."
-
-          ls -lh "$GITHUB_WORKSPACE/artifacts/Q8Basket.ipa"
 
       # ============================================================
       # 23. UPLOAD IPA
@@ -669,9 +810,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Q8Basket-iOS-IPA
-          path: artifacts/Q8Basket.ipa
+          path: ${{ env.IPA_FILE }}
           if-no-files-found: error
-          retention-days: 7
+
 
       # ============================================================
       # 24. UPLOAD ARCHIVE
@@ -683,25 +824,30 @@ jobs:
           name: Q8Basket-iOS-Archive
           path: ${{ env.ARCHIVE_PATH }}
           if-no-files-found: error
-          retention-days: 7
+
 
       # ============================================================
-      # 25. CLEANUP KEYCHAIN
+      # 25. CLEANUP
       # ============================================================
 
       - name: Cleanup signing files
         if: always()
         shell: bash
         run: |
+          set +e
+
           echo "Cleaning temporary signing files..."
 
-          if [ -n "${KEYCHAIN_PATH:-}" ] && [ -f "$KEYCHAIN_PATH" ]; then
-            security delete-keychain "$KEYCHAIN_PATH" || true
-          fi
+          security delete-keychain \
+            "$KEYCHAIN_PATH" \
+            2>/dev/null || true
 
-          rm -f "${RUNNER_TEMP}/distribution.p12" || true
-          rm -f "${RUNNER_TEMP}/Q8Basket_AppStore_Distribution.mobileprovision" || true
-          rm -f "${RUNNER_TEMP}/profile.plist" || true
-          rm -f "${RUNNER_TEMP}/ExportOptions.plist" || true
+          rm -f "$P12_PATH" 2>/dev/null || true
+
+          rm -f "$PROFILE_PATH" 2>/dev/null || true
+
+          rm -f "$RUNNER_TEMP/profile.plist" 2>/dev/null || true
+
+          rm -f "$RUNNER_TEMP/ExportOptions.plist" 2>/dev/null || true
 
           echo "Cleanup completed."
