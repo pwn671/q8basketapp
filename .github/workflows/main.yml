@@ -33,19 +33,19 @@ jobs:
           cache: npm
 
       # =========================================================
-      # 3. Install dependencies
+      # 3. Install npm dependencies
       # =========================================================
       - name: Install dependencies
         run: npm ci
 
       # =========================================================
-      # 4. Build web app
+      # 4. Build React/Vite
       # =========================================================
       - name: Build web app
         run: npm run build
 
       # =========================================================
-      # 5. Sync Capacitor iOS
+      # 5. Capacitor sync
       # =========================================================
       - name: Sync Capacitor iOS
         run: npx cap sync ios
@@ -55,10 +55,11 @@ jobs:
       # =========================================================
       - name: Install CocoaPods dependencies
         working-directory: ios/App
-        run: pod install
+        run: |
+          pod install --repo-update
 
       # =========================================================
-      # 7. Create signing keychain
+      # 7. Create temporary signing keychain
       # =========================================================
       - name: Create signing keychain
         run: |
@@ -86,8 +87,9 @@ jobs:
         run: |
           echo "$P12_BASE64" | base64 --decode > distribution.p12
 
-          echo "Checking P12 file..."
+          echo "P12 file:"
           ls -lh distribution.p12
+
           file distribution.p12
 
       # =========================================================
@@ -97,7 +99,7 @@ jobs:
         env:
           P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
         run: |
-          echo "Verifying P12 password..."
+          echo "Checking P12..."
 
           openssl pkcs12 \
             -info \
@@ -105,10 +107,10 @@ jobs:
             -noout \
             -passin env:P12_PASSWORD
 
-          echo "P12 verification successful."
+          echo "P12 password verified successfully."
 
       # =========================================================
-      # 10. Import signing certificate
+      # 10. Import Apple Distribution certificate
       # =========================================================
       - name: Install signing certificate
         env:
@@ -126,7 +128,8 @@ jobs:
             -k "build-password" \
             build.keychain-db
 
-          echo "Signing identities:"
+          echo "Available signing identities:"
+
           security find-identity \
             -v \
             -p codesigning \
@@ -139,19 +142,22 @@ jobs:
         env:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
         run: |
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+
+          mkdir -p "$PROFILE_DIR"
 
           echo "$PROVISIONING_PROFILE_BASE64" \
             | base64 --decode \
-            > "$HOME/Library/MobileDevice/Provisioning Profiles/Q8Basket_AppStore_Distribution.mobileprovision"
+            > "$PROFILE_DIR/Q8Basket_AppStore_Distribution.mobileprovision"
 
-          echo "Provisioning profile:"
-          ls -lh "$HOME/Library/MobileDevice/Provisioning Profiles/"
+          echo "Provisioning profile installed."
+
+          ls -lh "$PROFILE_DIR"
 
       # =========================================================
-      # 12. Read provisioning profile
+      # 12. Read provisioning profile information
       # =========================================================
-      - name: Get provisioning profile information
+      - name: Read provisioning profile
         id: profile
         run: |
           PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/Q8Basket_AppStore_Distribution.mobileprovision"
@@ -163,74 +169,79 @@ jobs:
 
           PROFILE_UUID=$(
             /usr/libexec/PlistBuddy \
-            -c "Print :UUID" \
-            profile.plist
+              -c "Print :UUID" \
+              profile.plist
           )
 
           PROFILE_NAME=$(
             /usr/libexec/PlistBuddy \
-            -c "Print :Name" \
-            profile.plist
+              -c "Print :Name" \
+              profile.plist
           )
 
           PROFILE_APP_ID=$(
             /usr/libexec/PlistBuddy \
-            -c "Print :Entitlements:application-identifier" \
-            profile.plist
+              -c "Print :Entitlements:application-identifier" \
+              profile.plist
           )
 
-          echo "===================================="
-          echo "Profile UUID: $PROFILE_UUID"
-          echo "Profile Name: $PROFILE_NAME"
-          echo "Profile App ID: $PROFILE_APP_ID"
-          echo "===================================="
+          echo "======================================"
+          echo "Provisioning Profile"
+          echo "======================================"
+          echo "UUID: $PROFILE_UUID"
+          echo "Name: $PROFILE_NAME"
+          echo "App ID: $PROFILE_APP_ID"
+          echo "======================================"
 
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_OUTPUT"
           echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_OUTPUT"
 
       # =========================================================
-      # 13. Check workspace
+      # 13. Check Xcode project
       # =========================================================
-      - name: Check Xcode workspace
+      - name: Check Xcode project
         working-directory: ios/App
         run: |
-          echo "Current directory:"
-          pwd
+          echo "======================================"
+          echo "XCODE FILES"
+          echo "======================================"
 
-          echo ""
-          echo "Files:"
           ls -la
 
           echo ""
           echo "Workspace:"
-          ls -la *.xcworkspace
+          ls -la App.xcworkspace
+
+          echo ""
+          echo "Project:"
+          ls -la App.xcodeproj
 
       # =========================================================
-      # 14. Detect Xcode scheme automatically
+      # 14. Find application target
       # =========================================================
-      - name: Detect Xcode scheme
-        id: scheme
+      - name: Find App target
+        id: target
         working-directory: ios/App
         run: |
-          echo "===================================="
-          echo "XCODE WORKSPACE INFORMATION"
-          echo "===================================="
+          echo "======================================"
+          echo "PROJECT TARGETS"
+          echo "======================================"
 
           xcodebuild \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -list
 
           echo ""
-          echo "===================================="
-          echo "Detecting scheme..."
-          echo "===================================="
+          echo "======================================"
+          echo "Finding application target..."
+          echo "======================================"
 
-          SCHEME=$(
+          TARGET_NAME=$(
             xcodebuild \
-              -workspace App.xcworkspace \
-              -list 2>/dev/null |
+              -project App.xcodeproj \
+              -list |
             awk '
-              /^Schemes:/ {
+              /^Targets:/ {
                 found=1
                 next
               }
@@ -243,23 +254,180 @@ jobs:
             sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
           )
 
-          if [ -z "$SCHEME" ]; then
-            echo "ERROR: No shared Xcode scheme was found."
-            echo ""
-            echo "Available schemes:"
-            xcodebuild \
-              -workspace App.xcworkspace \
-              -list
-
+          if [ -z "$TARGET_NAME" ]; then
+            echo "ERROR: Could not find an Xcode target."
             exit 1
           fi
 
-          echo "Detected scheme: $SCHEME"
+          echo "Detected target: $TARGET_NAME"
 
-          echo "SCHEME=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "TARGET_NAME=$TARGET_NAME" >> "$GITHUB_OUTPUT"
 
       # =========================================================
-      # 15. Create ExportOptions.plist
+      # 15. Create shared Xcode scheme
+      # =========================================================
+      - name: Create shared App scheme
+        working-directory: ios/App
+        env:
+          TARGET_NAME: ${{ steps.target.outputs.TARGET_NAME }}
+        run: |
+          echo "Creating shared Xcode scheme..."
+
+          mkdir -p App.xcodeproj/xcshareddata/xcschemes
+
+          TARGET_ID=$(
+            grep -B 3 -m 1 \
+              "name = $TARGET_NAME;" \
+              App.xcodeproj/project.pbxproj |
+            grep -Eo '[A-F0-9]{24}' |
+            head -n 1
+          )
+
+          if [ -z "$TARGET_ID" ]; then
+            echo "Could not automatically find target ID."
+            echo "Trying to use App target..."
+
+            TARGET_ID=$(
+              grep -B 3 -m 1 \
+                'name = App;' \
+                App.xcodeproj/project.pbxproj |
+              grep -Eo '[A-F0-9]{24}' |
+              head -n 1
+            )
+          fi
+
+          if [ -z "$TARGET_ID" ]; then
+            echo "ERROR: Target ID not found."
+            exit 1
+          fi
+
+          echo "Target name: $TARGET_NAME"
+          echo "Target ID: $TARGET_ID"
+
+          cat > App.xcodeproj/xcshareddata/xcschemes/App.xcscheme <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <Scheme
+             LastUpgradeVersion = "1600"
+             version = "1.7">
+
+             <BuildAction
+                parallelizeBuildables = "YES"
+                buildImplicitDependencies = "YES">
+
+                <BuildActionEntries>
+
+                   <BuildActionEntry
+                      buildForTesting = "YES"
+                      buildForRunning = "YES"
+                      buildForProfiling = "YES"
+                      buildForArchiving = "YES"
+                      buildForAnalyzing = "YES">
+
+                      <BuildableReference
+                         BuildableIdentifier = "primary"
+                         BlueprintIdentifier = "$TARGET_ID"
+                         BuildableName = "$TARGET_NAME.app"
+                         BlueprintName = "$TARGET_NAME"
+                         ReferencedContainer = "container:App.xcodeproj">
+                      </BuildableReference>
+
+                   </BuildActionEntry>
+
+                </BuildActionEntries>
+
+             </BuildAction>
+
+             <TestAction
+                buildConfiguration = "Debug"
+                selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+                selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+                shouldUseLaunchSchemeArgsEnv = "YES">
+
+             </TestAction>
+
+             <LaunchAction
+                buildConfiguration = "Debug"
+                selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+                selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+                launchStyle = "0"
+                useCustomWorkingDirectory = "NO"
+                ignoresPersistentStateOnLaunch = "NO"
+                debugDocumentVersioning = "YES"
+                debugServiceExtension = "internal"
+                allowLocationSimulation = "YES">
+
+                <BuildableProductRunnable
+                   runnableDebuggingMode = "0">
+
+                   <BuildableReference
+                      BuildableIdentifier = "primary"
+                      BlueprintIdentifier = "$TARGET_ID"
+                      BuildableName = "$TARGET_NAME.app"
+                      BlueprintName = "$TARGET_NAME"
+                      ReferencedContainer = "container:App.xcodeproj">
+                   </BuildableReference>
+
+                </BuildableProductRunnable>
+
+             </LaunchAction>
+
+             <ProfileAction
+                buildConfiguration = "Release"
+                shouldUseLaunchSchemeArgsEnv = "YES"
+                savedToolIdentifier = ""
+                useCustomWorkingDirectory = "NO"
+                debugDocumentVersioning = "YES">
+
+                <BuildableProductRunnable
+                   runnableDebuggingMode = "0">
+
+                   <BuildableReference
+                      BuildableIdentifier = "primary"
+                      BlueprintIdentifier = "$TARGET_ID"
+                      BuildableName = "$TARGET_NAME.app"
+                      BlueprintName = "$TARGET_NAME"
+                      ReferencedContainer = "container:App.xcodeproj">
+                   </BuildableReference>
+
+                </BuildableProductRunnable>
+
+             </ProfileAction>
+
+             <AnalyzeAction
+                buildConfiguration = "Debug">
+             </AnalyzeAction>
+
+             <ArchiveAction
+                buildConfiguration = "Release"
+                revealArchiveInOrganizer = "YES"
+                customArchiveName = "Q8Basket">
+             </ArchiveAction>
+
+          </Scheme>
+          EOF
+
+          echo "======================================"
+          echo "Created scheme:"
+          echo "======================================"
+
+          cat App.xcodeproj/xcshareddata/xcschemes/App.xcscheme
+
+      # =========================================================
+      # 16. Verify scheme
+      # =========================================================
+      - name: Verify Xcode scheme
+        working-directory: ios/App
+        run: |
+          echo "======================================"
+          echo "AVAILABLE WORKSPACE SCHEMES"
+          echo "======================================"
+
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -list
+
+      # =========================================================
+      # 17. Create ExportOptions.plist
       # =========================================================
       - name: Create ExportOptions.plist
         env:
@@ -308,27 +476,27 @@ jobs:
           cat ExportOptions.plist
 
       # =========================================================
-      # 16. Build iOS Archive
+      # 18. Build Archive
       # =========================================================
       - name: Build iOS Archive
         working-directory: ios/App
         env:
           PROFILE_NAME: ${{ steps.profile.outputs.PROFILE_NAME }}
-          SCHEME: ${{ steps.scheme.outputs.SCHEME }}
         run: |
-          echo "===================================="
-          echo "Building iOS Archive"
-          echo "Scheme: $SCHEME"
-          echo "Bundle ID: $BUNDLE_ID"
-          echo "Team ID: $DEVELOPMENT_TEAM"
-          echo "Profile: $PROFILE_NAME"
-          echo "===================================="
+          echo "======================================"
+          echo "BUILDING IOS ARCHIVE"
+          echo "======================================"
 
-          rm -rf build
+          echo "Scheme: App"
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "Team: $DEVELOPMENT_TEAM"
+          echo "Profile: $PROFILE_NAME"
+
+          rm -rf "$GITHUB_WORKSPACE/build"
 
           xcodebuild \
             -workspace App.xcworkspace \
-            -scheme "$SCHEME" \
+            -scheme App \
             -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
@@ -341,7 +509,7 @@ jobs:
             clean archive
 
       # =========================================================
-      # 17. Check Archive
+      # 19. Check archive
       # =========================================================
       - name: Check Archive
         run: |
@@ -350,14 +518,14 @@ jobs:
           ls -lah build/
 
           if [ ! -d "build/Q8Basket.xcarchive" ]; then
-            echo "ERROR: Archive was not created."
+            echo "ERROR: Q8Basket.xcarchive was not created."
             exit 1
           fi
 
           echo "Archive created successfully."
 
       # =========================================================
-      # 18. Export IPA
+      # 20. Export IPA
       # =========================================================
       - name: Export IPA
         run: |
@@ -370,13 +538,13 @@ jobs:
             -exportOptionsPlist ExportOptions.plist
 
       # =========================================================
-      # 19. Check IPA
+      # 21. Check IPA
       # =========================================================
       - name: Check IPA
         run: |
-          echo "===================================="
-          echo "IPA FILES"
-          echo "===================================="
+          echo "======================================"
+          echo "IPA FILE"
+          echo "======================================"
 
           find build/export \
             -type f \
@@ -390,12 +558,11 @@ jobs:
             exit 1
           fi
 
-          echo ""
-          echo "IPA created successfully:"
+          echo "IPA created:"
           echo "$IPA_FILE"
 
       # =========================================================
-      # 20. Upload IPA
+      # 22. Upload IPA
       # =========================================================
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -405,7 +572,7 @@ jobs:
           if-no-files-found: error
 
       # =========================================================
-      # 21. Upload Archive
+      # 23. Upload Archive
       # =========================================================
       - name: Upload iOS Archive
         uses: actions/upload-artifact@v4
@@ -415,7 +582,7 @@ jobs:
           if-no-files-found: error
 
       # =========================================================
-      # 22. Cleanup
+      # 24. Cleanup
       # =========================================================
       - name: Cleanup signing files
         if: always()
