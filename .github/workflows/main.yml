@@ -627,14 +627,14 @@ jobs:
           fi
 
           if [ "$IPA_BUILD" != "4" ]; then
-            echo "ERROR: Expected build 4."
+            echo "ERROR: Expected build 5."
             echo "Found build: $IPA_BUILD"
             exit 1
           fi
 
           echo "=========================================="
           echo "IPA VERSION VERIFIED"
-          echo "2.4.0 (Build 4)"
+          echo "2.4.0 (Build 5)"
           echo "=========================================="
 
 
