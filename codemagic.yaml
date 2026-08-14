@@ -5,6 +5,8 @@ workflows:
     environment:
       xcode: latest
       cocoapods: default
+      groups:
+        - q8basket
 
     scripts:
       - name: Install dependencies
