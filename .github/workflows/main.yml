@@ -626,7 +626,7 @@ jobs:
             exit 1
           fi
 
-          if [ "$IPA_BUILD" != "4" ]; then
+          if [ "$IPA_BUILD" != "5" ]; then
             echo "ERROR: Expected build 5."
             echo "Found build: $IPA_BUILD"
             exit 1
