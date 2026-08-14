@@ -620,21 +620,21 @@ jobs:
             echo "Found:    [$IPA_BUNDLE_ID]"
             exit 1
           fi
-          if [ "$IPA_VERSION" != "2.4.0" ]; then
-            echo "ERROR: Expected version 2.4.0."
+          if [ "$IPA_VERSION" != "2.4.1" ]; then
+            echo "ERROR: Expected version 2.4.1."
             echo "Found version: $IPA_VERSION"
             exit 1
           fi
 
           if [ "$IPA_BUILD" != "5" ]; then
-            echo "ERROR: Expected build 5."
+            echo "ERROR: Expected build 1."
             echo "Found build: $IPA_BUILD"
             exit 1
           fi
 
           echo "=========================================="
           echo "IPA VERSION VERIFIED"
-          echo "2.4.0 (Build 5)"
+          echo "2.4.1 (Build 1)"
           echo "=========================================="
 
 
