@@ -605,7 +605,8 @@ jobs:
           IPA_BUILD=$(
             /usr/libexec/PlistBuddy \
               -c "Print :CFBundleVersion" \
-              "$APP_PATH/Info.plist"
+              "$APP_PATH/Info.plist" \
+              | tr -d '[:space:]'
           )
 
           echo "Bundle ID : [$IPA_BUNDLE_ID]"
