@@ -624,8 +624,8 @@ jobs:
             exit 1
           fi
 
-          if [ "$IPA_VERSION" != "2.4.1" ]; then
-            echo "ERROR: Expected version 2.4.1."
+          if [ "$IPA_VERSION" != "2.4.2" ]; then
+            echo "ERROR: Expected version 2.4.2."
             echo "Found version: $IPA_VERSION"
             exit 1
           fi
@@ -638,7 +638,7 @@ jobs:
 
           echo "=========================================="
           echo "IPA VERSION VERIFIED"
-          echo "2.4.1 (Build 1)"
+          echo "2.4.2 (Build 2)"
           echo "=========================================="
 
       # ============================================================
