@@ -12,25 +12,15 @@ import {
   OfflineIndicator,
   ServiceWorkerUpdate,
 } from "./components/PWAUtils.jsx";
-import { Capacitor } from "@capacitor/core";
-import { initializeGoogleAuth } from "./utils/googleAuth";
+
+
 
 import "./assets/styles/styles.css";
 
 // Initialize Google Auth ONLY for mobile platforms
 // Android: uses web client (from strings.xml server_client_id) - requestIdToken(webClientId) works
 // iOS: must use iOS client (from GoogleService-Info.plist) - GIDConfiguration requires it for sign-in
-if (Capacitor.isNativePlatform()) {
-  const platform = Capacitor.getPlatform();
-  const clientId =
-    platform === "ios"
-      ? import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS ||
-        import.meta.env.VITE_GOOGLE_CLIENT_ID
-      : import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-        import.meta.env.VITE_GOOGLE_CLIENT_ID_MOBILE;
 
-  initializeGoogleAuth(clientId).catch(() => {});
-}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
