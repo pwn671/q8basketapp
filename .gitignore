@@ -44,3 +44,5 @@ android/local.properties
 *.pem
 *.key
 *.csr
+
+q8basket-release-key.jks

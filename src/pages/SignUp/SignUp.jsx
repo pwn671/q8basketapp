@@ -208,7 +208,18 @@ export default function SignUp({ onSignIn, onRegistrationSuccess }) {
       try {
         await SocialLogin.initialize({
           google: {
+            // Web Client ID
+            // Capgo Android setup also uses the Web Client ID
             webClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+
+            // iOS OAuth Client ID
+            iOSClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS,
+
+            // Same Web Client ID for server-side verification
+            iOSServerClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+
+            // We need idToken/user data in the app
+            mode: "online",
           },
         });
 
