@@ -630,8 +630,8 @@ jobs:
             exit 1
           fi
 
-          if [ "$IPA_BUILD" != "2" ]; then
-            echo "ERROR: Expected build 2."
+          if [ "$IPA_BUILD" != "3" ]; then
+            echo "ERROR: Expected build 3."
             echo "Found build: $IPA_BUILD"
             exit 1
           fi
@@ -741,5 +741,6 @@ jobs:
             2>/dev/null || true
 
           echo "Cleanup completed."
+
 
 
